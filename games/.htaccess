@@ -1,0 +1,11 @@
+# Block all direct access to game files.
+# These are served exclusively through the mfsd-arcade game loader endpoint.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule .* - [F,L]
+</IfModule>
+
+# Fallback for servers without mod_rewrite
+<IfModule !mod_rewrite.c>
+    Deny from all
+</IfModule>

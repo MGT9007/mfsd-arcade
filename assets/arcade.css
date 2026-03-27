@@ -1,0 +1,439 @@
+/* ================================================================
+   MFSD Arcade — Styles
+   Dark gaming theme consistent with Quest Log.
+   ================================================================ */
+
+.mfsd-arcade {
+    --arc-bg:        #0d1117;
+    --arc-surface:   #161b22;
+    --arc-border:    #30363d;
+    --arc-text:      #e0e0e0;
+    --arc-muted:     #8b949e;
+    --arc-accent:    #58a6ff;
+    --arc-gold:      #fbbf24;
+    --arc-green:     #28a745;
+    --arc-amber:     #f0ad4e;
+    --arc-red:       #dc3545;
+    --arc-purple:    #a855f7;
+    --arc-radius:    12px;
+
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--arc-text);
+    background: var(--arc-bg);
+    border-radius: var(--arc-radius);
+    padding: 24px;
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+.mfsd-arcade-msg {
+    text-align: center;
+    padding: 40px;
+    color: var(--arc-muted);
+}
+
+/* ── Header ── */
+.arc-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.arc-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--arc-text);
+    flex: 1;
+}
+
+.arc-back {
+    color: var(--arc-accent);
+    text-decoration: none;
+    font-size: 14px;
+}
+.arc-back:hover { text-decoration: underline; }
+
+.arc-wallet {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--arc-surface);
+    border: 1px solid var(--arc-border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.arc-coin-icon { font-size: 18px; }
+.arc-balance { color: var(--arc-gold); }
+.arc-balance-label { color: var(--arc-muted); font-weight: 400; font-size: 13px; }
+
+/* ── Economy info ── */
+.arc-economy-info {
+    margin-bottom: 20px;
+}
+
+.arc-rate {
+    display: inline-block;
+    background: var(--arc-surface);
+    border: 1px solid var(--arc-border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    color: var(--arc-muted);
+}
+
+/* ── Live session banner ── */
+.arc-live-banner {
+    background: linear-gradient(135deg, #1a2332, #162218);
+    border: 1px solid var(--arc-green);
+    border-radius: var(--arc-radius);
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 14px;
+}
+
+/* ── Game grid (lobby) ── */
+.arc-game-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+.arc-game-card {
+    background: var(--arc-surface);
+    border: 1px solid var(--arc-border);
+    border-radius: var(--arc-radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.2s, transform 0.2s;
+}
+
+.arc-game-card:hover {
+    border-color: var(--arc-accent);
+    transform: translateY(-2px);
+}
+
+.arc-game-thumb {
+    position: relative;
+    background: #1c2333;
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.arc-game-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.arc-game-thumb-placeholder {
+    font-size: 48px;
+    opacity: 0.4;
+}
+
+.arc-game-category {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.6);
+    color: var(--arc-muted);
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.arc-game-info {
+    padding: 14px 16px;
+    flex: 1;
+}
+
+.arc-game-title {
+    margin: 0 0 6px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--arc-text);
+}
+
+.arc-game-desc {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: var(--arc-muted);
+    line-height: 1.4;
+}
+
+.arc-game-cost {
+    font-size: 13px;
+    color: var(--arc-muted);
+}
+.arc-game-cost span:first-child { color: var(--arc-gold); font-weight: 600; }
+.arc-game-time { color: var(--arc-muted); }
+
+.arc-btn-play {
+    display: block;
+    text-align: center;
+    margin: 0 16px 14px;
+}
+
+/* ── Buttons ── */
+.arc-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    transition: background 0.2s, opacity 0.2s;
+    color: #fff;
+    background: var(--arc-accent);
+}
+
+.arc-btn:hover { opacity: 0.85; }
+.arc-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.arc-btn-sm {
+    padding: 6px 14px;
+    font-size: 13px;
+}
+
+.arc-btn-purchase {
+    background: var(--arc-green);
+    font-size: 16px;
+    padding: 12px 28px;
+}
+
+.arc-btn-pause {
+    background: var(--arc-amber);
+    color: #000;
+}
+
+/* ── Purchase panel ── */
+.arc-purchase-panel {
+    display: flex;
+    justify-content: center;
+    padding: 40px 0;
+}
+
+.arc-purchase-inner {
+    background: var(--arc-surface);
+    border: 1px solid var(--arc-border);
+    border-radius: var(--arc-radius);
+    padding: 32px;
+    max-width: 440px;
+    width: 100%;
+    text-align: center;
+}
+
+.arc-purchase-inner h3 {
+    margin: 0 0 8px;
+    font-size: 22px;
+    color: var(--arc-text);
+}
+
+.arc-rate-info {
+    color: var(--arc-muted);
+    font-size: 14px;
+    margin-bottom: 24px;
+}
+
+.arc-coin-slider-wrap {
+    margin-bottom: 24px;
+}
+
+.arc-coin-slider-wrap label {
+    display: block;
+    font-size: 13px;
+    color: var(--arc-muted);
+    margin-bottom: 10px;
+}
+
+.arc-coin-slider-wrap input[type="range"] {
+    width: 100%;
+    accent-color: var(--arc-gold);
+}
+
+.arc-coin-readout {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 12px;
+    font-size: 18px;
+}
+
+.arc-coin-amount { color: var(--arc-gold); font-weight: 700; font-size: 28px; }
+.arc-coin-label { color: var(--arc-muted); font-size: 14px; }
+.arc-time-equals { color: var(--arc-muted); font-size: 20px; }
+.arc-time-amount { color: var(--arc-green); font-weight: 600; font-size: 22px; }
+
+.arc-insufficient {
+    background: rgba(220, 53, 69, 0.15);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    border-radius: 8px;
+    padding: 14px;
+    color: #f8d7da;
+    font-size: 14px;
+}
+
+/* ── Game container ── */
+.arc-game-container {
+    position: relative;
+}
+
+/* ── Timer bar ── */
+.arc-timer-bar {
+    background: var(--arc-surface);
+    border: 1px solid var(--arc-border);
+    border-radius: 8px;
+    height: 40px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.arc-timer-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: var(--arc-green);
+    border-radius: 8px;
+    transition: width 1s linear, background 0.5s;
+    opacity: 0.25;
+}
+
+.arc-timer-text {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    padding: 0 12px 0 16px;
+}
+
+#arc-timer-display {
+    font-size: 20px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 1px;
+    color: var(--arc-text);
+}
+
+#arc-timer-display.arc-urgent {
+    color: var(--arc-red);
+    animation: arc-pulse 1s ease-in-out infinite;
+}
+
+@keyframes arc-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.5; }
+}
+
+/* ── Iframe ── */
+.arc-iframe-wrap {
+    border-radius: var(--arc-radius);
+    overflow: hidden;
+    border: 1px solid var(--arc-border);
+    background: #000;
+}
+
+.arc-iframe {
+    display: block;
+    width: 100%;
+    height: 70vh;
+    min-height: 400px;
+    border: none;
+}
+
+/* ── Overlays (paused / expired) ── */
+.arc-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(13, 17, 23, 0.92);
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    border-radius: var(--arc-radius);
+}
+
+.arc-overlay-inner {
+    text-align: center;
+    padding: 40px;
+}
+
+.arc-overlay-inner h3 {
+    font-size: 28px;
+    margin: 0 0 12px;
+}
+
+.arc-overlay-inner p {
+    color: var(--arc-muted);
+    font-size: 15px;
+    margin: 0 0 12px;
+}
+
+.arc-time-remaining {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--arc-gold);
+    font-variant-numeric: tabular-nums;
+    margin: 16px 0 24px !important;
+}
+
+.arc-expired-balance {
+    font-size: 18px;
+    margin: 16px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.arc-expired-balance span:nth-child(2) {
+    color: var(--arc-gold);
+    font-weight: 700;
+    font-size: 24px;
+}
+
+.arc-expired-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin: 20px 0 16px;
+    flex-wrap: wrap;
+}
+
+.arc-earn-more {
+    color: var(--arc-purple) !important;
+    font-style: italic;
+    font-size: 14px !important;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+    .mfsd-arcade { padding: 16px; }
+    .arc-game-grid { grid-template-columns: 1fr; }
+    .arc-iframe { height: 50vh; min-height: 300px; }
+    .arc-purchase-inner { padding: 20px; }
+    .arc-coin-amount { font-size: 22px; }
+    .arc-time-amount { font-size: 18px; }
+}

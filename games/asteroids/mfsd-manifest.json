@@ -1,0 +1,19 @@
+{
+    "title": "Asteroids",
+    "canvas_id": "canvas",
+    "canvas_width": 780,
+    "canvas_height": 540,
+    "head_scripts": [
+        "jquery-1.4.1.min.js",
+        "vector_battle_regular.typeface.js",
+        "ipad.js",
+        "game.js"
+    ],
+    "stylesheets": [
+        "mfsd-leaderboard.css"
+    ],
+    "body_scripts": [
+        "mfsd-leaderboard.js",
+        "mfsd-asteroids-hook.js"
+    ]
+}
