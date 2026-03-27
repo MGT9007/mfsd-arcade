@@ -238,6 +238,29 @@ class MFSD_Arcade_Game_Loader {
 <?php foreach (($manifest['stylesheets'] ?? array()) as $css): ?>
 <link rel="stylesheet" href="<?php echo esc_url($asset_base . urlencode($css) . $token_query); ?>">
 <?php endforeach; ?>
+<script>
+/* Rewrite relative asset URLs (audio, images) through the gated endpoint.
+   Game code uses e.g. new Audio("laser.wav") which resolves relative to
+   the REST game page — this patch redirects them to /game-asset/ with token. */
+(function(){
+  var base  = <?php echo wp_json_encode($asset_base); ?>;
+  var tq    = <?php echo wp_json_encode($token_query); ?>;
+  function rewrite(src) {
+    if (!src || src.indexOf('://') !== -1 || src.indexOf('//') === 0 || src.indexOf('data:') === 0) return src;
+    return base + encodeURIComponent(src) + tq;
+  }
+  /* Patch Audio constructor */
+  var _Audio = window.Audio;
+  window.Audio = function(src) { return new _Audio(rewrite(src)); };
+  window.Audio.prototype = _Audio.prototype;
+  /* Patch Image.src setter for any image assets loaded by game code */
+  var _imgDesc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+  Object.defineProperty(HTMLImageElement.prototype, 'src', {
+    set: function(v) { _imgDesc.set.call(this, rewrite(v)); },
+    get: function()  { return _imgDesc.get.call(this); }
+  });
+})();
+</script>
 <?php foreach (($manifest['head_scripts'] ?? array()) as $js): ?>
 <script src="<?php echo esc_url($asset_base . urlencode($js) . $token_query); ?>"></script>
 <?php endforeach; ?>
