@@ -59,7 +59,7 @@ class MFSD_Arcade_Game_Loader {
             'permission_callback' => '__return_true', /* auth handled inside */
             'args' => array(
                 'slug'  => array('required' => true, 'sanitize_callback' => 'sanitize_key'),
-                'file'  => array('required' => true, 'sanitize_callback' => 'sanitize_file_name'),
+                'file'  => array('required' => true, 'sanitize_callback' => 'sanitize_text_field'),
                 'token' => array('required' => true, 'sanitize_callback' => 'sanitize_text_field'),
             ),
         ));
