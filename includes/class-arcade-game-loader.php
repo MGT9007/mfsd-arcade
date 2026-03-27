@@ -134,10 +134,11 @@ class MFSD_Arcade_Game_Loader {
         }
 
         /* Build the asset base URL (all assets go through the gated endpoint) */
-        $asset_base = rest_url('mfsd-arcade/v1/game-asset/' . $slug) . '?token=' . urlencode($token) . '&file=';
+        $asset_base  = rest_url('mfsd-arcade/v1/game-asset/' . $slug . '/');
+        $token_query = '?token=' . urlencode($token);
 
         /* Assemble the HTML */
-        $html = $this->build_game_html($slug, $token, $manifest, $asset_base, $game_dir);
+        $html = $this->build_game_html($slug, $token, $manifest, $asset_base, $game_dir, $token_query);
 
         /* Serve as a full HTML page (bypass REST JSON response) */
         header('Content-Type: text/html; charset=UTF-8');
@@ -213,7 +214,7 @@ class MFSD_Arcade_Game_Loader {
     /* ================================================================
        BUILD GAME HTML — the full page served inside the iframe
        ================================================================ */
-    private function build_game_html($slug, $token, $manifest, $asset_base, $game_dir) {
+    private function build_game_html($slug, $token, $manifest, $asset_base, $game_dir, $token_query = '') {
         /* If there's a custom template in the game dir, use it */
         $template_path = $game_dir . 'mfsd-template.html';
         if (file_exists($template_path)) {
@@ -221,6 +222,7 @@ class MFSD_Arcade_Game_Loader {
             /* Replace asset placeholders */
             $html = str_replace('{{ASSET_BASE}}', $asset_base, $html);
             $html = str_replace('{{TOKEN}}', esc_attr($token), $html);
+            $html = str_replace('{{TOKEN_QUERY}}', $token_query, $html);
             $html = str_replace('{{SLUG}}', esc_attr($slug), $html);
             return $html;
         }
@@ -234,10 +236,10 @@ class MFSD_Arcade_Game_Loader {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MFSD Arcade</title>
 <?php foreach (($manifest['stylesheets'] ?? array()) as $css): ?>
-<link rel="stylesheet" href="<?php echo esc_url($asset_base . urlencode($css)); ?>">
+<link rel="stylesheet" href="<?php echo esc_url($asset_base . urlencode($css) . $token_query); ?>">
 <?php endforeach; ?>
 <?php foreach (($manifest['head_scripts'] ?? array()) as $js): ?>
-<script src="<?php echo esc_url($asset_base . urlencode($js)); ?>"></script>
+<script src="<?php echo esc_url($asset_base . urlencode($js) . $token_query); ?>"></script>
 <?php endforeach; ?>
 <style>
   html, body { margin: 0; padding: 0; overflow: hidden; background: #000; }
@@ -253,7 +255,7 @@ class MFSD_Arcade_Game_Loader {
   ?>></canvas>
 </div>
 <?php foreach (($manifest['body_scripts'] ?? array()) as $js): ?>
-<script src="<?php echo esc_url($asset_base . urlencode($js)); ?>"></script>
+<script src="<?php echo esc_url($asset_base . urlencode($js) . $token_query); ?>"></script>
 <?php endforeach; ?>
 </body>
 </html>
