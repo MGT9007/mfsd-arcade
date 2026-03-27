@@ -70,15 +70,6 @@ class MFSD_Arcade_Game_Loader {
        Returns session row or WP_Error.
        ================================================================ */
     private function validate_request($token) {
-        if (!is_user_logged_in()) {
-            return new WP_Error('not_logged_in', 'You must be logged in to play.', array('status' => 401));
-        }
-
-        $user = wp_get_current_user();
-        if (!in_array('student', (array) $user->roles) && !in_array('administrator', (array) $user->roles)) {
-            return new WP_Error('not_student', 'Arcade access is for students only.', array('status' => 403));
-        }
-
         if (empty($token)) {
             return new WP_Error('no_token', 'Session token required.', array('status' => 400));
         }
@@ -99,9 +90,20 @@ class MFSD_Arcade_Game_Loader {
             return new WP_Error('session_ended', 'Your session has ended.', array('status' => 403));
         }
 
-        /* Ensure the session belongs to the current user */
-        if ((int) $session['student_id'] !== (int) $user->ID) {
-            return new WP_Error('wrong_user', 'This session does not belong to you.', array('status' => 403));
+        /*
+         * Verify the session owner is a student/admin.
+         * We authenticate via the session token itself (not WordPress cookies)
+         * because this endpoint is loaded as an iframe src — the browser sends
+         * the auth cookie but NOT the X-WP-Nonce, so WP REST won't recognise
+         * the user as logged in. The token is the auth credential here.
+         */
+        $user = get_userdata((int) $session['student_id']);
+        if (!$user) {
+            return new WP_Error('invalid_user', 'Session owner not found.', array('status' => 403));
+        }
+
+        if (!in_array('student', (array) $user->roles) && !in_array('administrator', (array) $user->roles)) {
+            return new WP_Error('not_student', 'Arcade access is for students only.', array('status' => 403));
         }
 
         return $session;
