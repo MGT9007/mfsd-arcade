@@ -5,7 +5,10 @@
  *
  * Game files live in /games/{slug}/ inside the plugin directory,
  * protected by .htaccess to block direct HTTP access.
- * Every request validates: logged in + student/admin role + valid active session token.
+ * Every request validates a valid active session token.
+ *
+ * Supports subdirectory assets (e.g. images/bg.png, sounds/coin.wav)
+ * via query-param routing: /game-asset/{slug}?file=path/to/file&token=xxx
  */
 
 if (!defined('ABSPATH')) exit;
@@ -21,11 +24,13 @@ class MFSD_Arcade_Game_Loader {
         'ogg'  => 'audio/ogg',
         'png'  => 'image/png',
         'jpg'  => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
         'gif'  => 'image/gif',
         'svg'  => 'image/svg+xml',
         'json' => 'application/json',
         'woff' => 'font/woff',
         'woff2'=> 'font/woff2',
+        'ttf'  => 'font/ttf',
     );
 
     /** Base path to the games directory. */
@@ -52,8 +57,9 @@ class MFSD_Arcade_Game_Loader {
             ),
         ));
 
-        /* Serve static assets (JS, CSS, audio, images) */
-        register_rest_route($ns, '/game-asset/(?P<slug>[a-z0-9_-]+)/(?P<file>[a-zA-Z0-9_.\-]+)', array(
+        /* Serve static assets — file path passed as query param to support subdirectories.
+           URL format: /game-asset/{slug}?file=images/bg.png&token=xxx */
+        register_rest_route($ns, '/game-asset/(?P<slug>[a-z0-9_-]+)', array(
             'methods'             => WP_REST_Server::READABLE,
             'callback'            => array($this, 'serve_asset'),
             'permission_callback' => '__return_true', /* auth handled inside */
@@ -66,8 +72,9 @@ class MFSD_Arcade_Game_Loader {
     }
 
     /* ================================================================
-       VALIDATE SESSION — checks login, role, and active session token
-       Returns session row or WP_Error.
+       VALIDATE SESSION — checks active session token + student role.
+       Authenticates via token (not WP cookies) because this runs
+       inside an iframe that doesn't send X-WP-Nonce.
        ================================================================ */
     private function validate_request($token) {
         if (empty($token)) {
@@ -90,13 +97,6 @@ class MFSD_Arcade_Game_Loader {
             return new WP_Error('session_ended', 'Your session has ended.', array('status' => 403));
         }
 
-        /*
-         * Verify the session owner is a student/admin.
-         * We authenticate via the session token itself (not WordPress cookies)
-         * because this endpoint is loaded as an iframe src — the browser sends
-         * the auth cookie but NOT the X-WP-Nonce, so WP REST won't recognise
-         * the user as logged in. The token is the auth credential here.
-         */
         $user = get_userdata((int) $session['student_id']);
         if (!$user) {
             return new WP_Error('invalid_user', 'Session owner not found.', array('status' => 403));
@@ -125,7 +125,7 @@ class MFSD_Arcade_Game_Loader {
             return new WP_Error('game_not_found', 'Game not found.', array('status' => 404));
         }
 
-        /* Look for a manifest file, or fall back to building from index.html */
+        /* Look for a manifest file, or fall back to auto-detection */
         $manifest_path = $game_dir . 'mfsd-manifest.json';
         if (file_exists($manifest_path)) {
             $manifest = json_decode(file_get_contents($manifest_path), true);
@@ -133,12 +133,13 @@ class MFSD_Arcade_Game_Loader {
             $manifest = $this->auto_detect_manifest($slug, $game_dir);
         }
 
-        /* Build the asset base URL (all assets go through the gated endpoint) */
-        $asset_base  = rest_url('mfsd-arcade/v1/game-asset/' . $slug . '/');
-        $token_query = '?token=' . urlencode($token);
+        /* Build the asset base URL — file passed as query param for subdirectory support.
+           Format: /wp-json/mfsd-arcade/v1/game-asset/{slug}?file={path}&token={token} */
+        $asset_base  = rest_url('mfsd-arcade/v1/game-asset/' . $slug);
+        $token_param = urlencode($token);
 
         /* Assemble the HTML */
-        $html = $this->build_game_html($slug, $token, $manifest, $asset_base, $game_dir, $token_query);
+        $html = $this->build_game_html($slug, $token, $manifest, $asset_base, $game_dir, $token_param);
 
         /* Serve as a full HTML page (bypass REST JSON response) */
         header('Content-Type: text/html; charset=UTF-8');
@@ -149,7 +150,7 @@ class MFSD_Arcade_Game_Loader {
     }
 
     /* ================================================================
-       SERVE STATIC ASSET — JS, CSS, audio, images
+       SERVE STATIC ASSET — JS, CSS, audio, images (with subdirs)
        ================================================================ */
     public function serve_asset($req) {
         $slug  = $req->get_param('slug');
@@ -159,29 +160,58 @@ class MFSD_Arcade_Game_Loader {
         $session = $this->validate_request($token);
         if (is_wp_error($session)) return $session;
 
-        /* Security: prevent directory traversal */
-        $file = basename($file);
-        $filepath = $this->games_dir . $slug . '/' . $file;
+        /* ── Security: sanitise the file path ── */
+        /* Normalise separators */
+        $file = str_replace('\\', '/', $file);
 
-        if (!file_exists($filepath)) {
+        /* Strip leading slashes */
+        $file = ltrim($file, '/');
+
+        /* Block directory traversal: reject any path with '..' or starting with '.' */
+        if (strpos($file, '..') !== false || strpos($file, './') !== false || $file === '') {
+            return new WP_Error('invalid_path', 'Invalid file path.', array('status' => 400));
+        }
+
+        /* Block hidden files */
+        $segments = explode('/', $file);
+        foreach ($segments as $seg) {
+            if ($seg === '' || $seg[0] === '.') {
+                return new WP_Error('invalid_path', 'Invalid file path.', array('status' => 400));
+            }
+        }
+
+        /* Resolve the full path and verify it stays within the game directory */
+        $game_dir = realpath($this->games_dir . $slug);
+        if (!$game_dir) {
+            return new WP_Error('game_not_found', 'Game not found.', array('status' => 404));
+        }
+
+        $filepath = realpath($game_dir . '/' . $file);
+        if (!$filepath || strpos($filepath, $game_dir . DIRECTORY_SEPARATOR) !== 0) {
             return new WP_Error('asset_not_found', 'Asset not found.', array('status' => 404));
         }
 
-        /* Determine MIME type */
-        $ext  = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-        $mime = self::MIME_TYPES[$ext] ?? 'application/octet-stream';
+        if (!is_file($filepath)) {
+            return new WP_Error('asset_not_found', 'Asset not found.', array('status' => 404));
+        }
+
+        /* Check the extension is allowed */
+        $ext  = strtolower(pathinfo($filepath, PATHINFO_EXTENSION));
+        $mime = self::MIME_TYPES[$ext] ?? null;
+        if (!$mime) {
+            return new WP_Error('invalid_type', 'File type not allowed.', array('status' => 403));
+        }
 
         /* Serve the file */
         header('Content-Type: ' . $mime);
         header('Content-Length: ' . filesize($filepath));
-        header('Cache-Control: private, max-age=3600'); /* cache for 1h (token will expire anyway) */
+        header('Cache-Control: private, max-age=3600');
         readfile($filepath);
         exit;
     }
 
     /* ================================================================
        AUTO-DETECT MANIFEST — for games without a manifest file
-       Scans the game directory and builds a list of files by type.
        ================================================================ */
     private function auto_detect_manifest($slug, $game_dir) {
         $manifest = array(
@@ -199,7 +229,6 @@ class MFSD_Arcade_Game_Loader {
             if ($ext === 'css') {
                 $manifest['stylesheets'][] = $f;
             } elseif ($ext === 'js') {
-                /* Leaderboard files go in body (after game), everything else in head */
                 if (strpos($f, 'mfsd-') === 0) {
                     $manifest['body_scripts'][] = $f;
                 } else {
@@ -214,15 +243,20 @@ class MFSD_Arcade_Game_Loader {
     /* ================================================================
        BUILD GAME HTML — the full page served inside the iframe
        ================================================================ */
-    private function build_game_html($slug, $token, $manifest, $asset_base, $game_dir, $token_query = '') {
+    private function build_game_html($slug, $token, $manifest, $asset_base, $game_dir, $token_param) {
+
+        /* Helper: build a gated asset URL from a relative file path */
+        $asset_url = function ($file) use ($asset_base, $token_param) {
+            return $asset_base . '?file=' . urlencode($file) . '&token=' . $token_param;
+        };
+
         /* If there's a custom template in the game dir, use it */
         $template_path = $game_dir . 'mfsd-template.html';
         if (file_exists($template_path)) {
             $html = file_get_contents($template_path);
-            /* Replace asset placeholders */
             $html = str_replace('{{ASSET_BASE}}', $asset_base, $html);
             $html = str_replace('{{TOKEN}}', esc_attr($token), $html);
-            $html = str_replace('{{TOKEN_QUERY}}', $token_query, $html);
+            $html = str_replace('{{TOKEN_PARAM}}', $token_param, $html);
             $html = str_replace('{{SLUG}}', esc_attr($slug), $html);
             return $html;
         }
@@ -235,40 +269,61 @@ class MFSD_Arcade_Game_Loader {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MFSD Arcade</title>
+<?php /* ── External CDN scripts (e.g. jQuery) ── */ ?>
+<?php foreach (($manifest['cdn_scripts'] ?? array()) as $cdn): ?>
+<script src="<?php echo esc_url($cdn); ?>"></script>
+<?php endforeach; ?>
+<?php /* ── Stylesheets ── */ ?>
 <?php foreach (($manifest['stylesheets'] ?? array()) as $css): ?>
-<link rel="stylesheet" href="<?php echo esc_url($asset_base . urlencode($css) . $token_query); ?>">
+<link rel="stylesheet" href="<?php echo esc_url($asset_url($css)); ?>">
 <?php endforeach; ?>
 <script>
-/* Rewrite relative asset URLs (audio, images) through the gated endpoint.
-   Game code uses e.g. new Audio("laser.wav") which resolves relative to
-   the REST game page — this patch redirects them to /game-asset/ with token. */
+/* ── Asset URL rewriter ──
+   Intercepts relative URLs used by game code (new Audio("sounds/coin.wav"),
+   Image.src = "images/bg.png") and rewrites them through the gated endpoint.
+   Supports both flat files and subdirectory paths. */
 (function(){
-  var base  = <?php echo wp_json_encode($asset_base); ?>;
-  var tq    = <?php echo wp_json_encode($token_query); ?>;
+  var base = <?php echo wp_json_encode($asset_base); ?>;
+  var tp   = <?php echo wp_json_encode($token_param); ?>;
   function rewrite(src) {
-    if (!src || src.indexOf('://') !== -1 || src.indexOf('//') === 0 || src.indexOf('data:') === 0) return src;
-    return base + encodeURIComponent(src) + tq;
+    if (!src) return src;
+    /* Skip absolute URLs, data URIs, blob URIs, already-rewritten URLs */
+    if (src.indexOf('://') !== -1 || src.indexOf('//') === 0 ||
+        src.indexOf('data:') === 0 || src.indexOf('blob:') === 0 ||
+        src.indexOf(base) !== -1) return src;
+    return base + '?file=' + encodeURIComponent(src) + '&token=' + tp;
   }
   /* Patch Audio constructor */
   var _Audio = window.Audio;
   window.Audio = function(src) { return new _Audio(rewrite(src)); };
   window.Audio.prototype = _Audio.prototype;
-  /* Patch Image.src setter for any image assets loaded by game code */
+  /* Patch Image.src setter */
   var _imgDesc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
   Object.defineProperty(HTMLImageElement.prototype, 'src', {
     set: function(v) { _imgDesc.set.call(this, rewrite(v)); },
     get: function()  { return _imgDesc.get.call(this); }
   });
+  /* Patch Audio.src setter (for games that create Audio() then set .src separately) */
+  var _audDesc = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'src');
+  if (_audDesc && _audDesc.set) {
+    Object.defineProperty(HTMLMediaElement.prototype, 'src', {
+      set: function(v) { _audDesc.set.call(this, rewrite(v)); },
+      get: function()  { return _audDesc.get.call(this); }
+    });
+  }
 })();
 </script>
+<?php /* ── Head scripts ── */ ?>
 <?php foreach (($manifest['head_scripts'] ?? array()) as $js): ?>
-<script src="<?php echo esc_url($asset_base . urlencode($js) . $token_query); ?>"></script>
+<script src="<?php echo esc_url($asset_url($js)); ?>"></script>
 <?php endforeach; ?>
 <style>
   html, body { margin: 0; padding: 0; overflow: hidden; background: #000; }
   #canvas { display: block; margin: 0 auto; background: <?php echo esc_attr($manifest['canvas_bg'] ?? '#fff'); ?>; }
   #game-container { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; }
 </style>
+<?php /* ── Extra head HTML from manifest ── */ ?>
+<?php if (!empty($manifest['extra_head_html'])) echo $manifest['extra_head_html']; ?>
 </head>
 <body>
 <div id="game-container">
@@ -277,9 +332,14 @@ class MFSD_Arcade_Game_Loader {
     if (!empty($manifest['canvas_height'])) echo ' height="' . (int) $manifest['canvas_height'] . '"';
   ?>></canvas>
 </div>
+<?php /* ── Body scripts ── */ ?>
 <?php foreach (($manifest['body_scripts'] ?? array()) as $js): ?>
-<script src="<?php echo esc_url($asset_base . urlencode($js) . $token_query); ?>"></script>
+<script src="<?php echo esc_url($asset_url($js)); ?>"></script>
 <?php endforeach; ?>
+<?php /* ── Inline init script from manifest ── */ ?>
+<?php if (!empty($manifest['init_script'])): ?>
+<script><?php echo $manifest['init_script']; ?></script>
+<?php endif; ?>
 </body>
 </html>
         <?php
