@@ -51,10 +51,10 @@ class MFSD_Arcade_Session {
             return new WP_Error('min_coins', 'Minimum ' . $game['min_coins'] . ' coin(s) required.', array('status' => 400));
         }
 
-        /* Check no existing live session for this student */
-        $existing = $this->db->get_any_live_session($student_id);
+        /* Check no existing live session for this student on THIS game */
+        $existing = $this->db->get_live_session($student_id, $game_id);
         if ($existing) {
-            return new WP_Error('session_exists', 'You already have an active session. Finish or pause it first.', array('status' => 409));
+            return new WP_Error('session_exists', 'You already have an active session on this game. Finish or pause it first.', array('status' => 409));
         }
 
         /* Deduct coins via wallet */
