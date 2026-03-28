@@ -8,7 +8,8 @@
         "https://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"
     ],
     "head_scripts": [
-        "mario.min.js"
+    "enjine.min.js",
+    "mario.min.js"
     ],
     "stylesheets": [
         "mfsd-leaderboard.css"
