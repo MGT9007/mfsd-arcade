@@ -266,7 +266,7 @@ class MFSD_Arcade_Game_Loader {
 <?php endforeach; ?>
 <style>
   html, body { margin: 0; padding: 0; overflow: hidden; background: #000; }
-  #canvas { display: block; margin: 0 auto; }
+  #canvas { display: block; margin: 0 auto; background: <?php echo esc_attr($manifest['canvas_bg'] ?? '#fff'); ?>; }
   #game-container { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; }
 </style>
 </head>
