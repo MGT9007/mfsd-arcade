@@ -15,5 +15,13 @@
     "body_scripts": [
         "mfsd-leaderboard.js",
         "mfsd-asteroids-hook.js"
+    ],
+    "controls": [
+        {"key": "Space", "action": "Start / Shoot"},
+        {"key": "← →", "action": "Rotate"},
+        {"key": "↑", "action": "Thrust"},
+        {"key": "M", "action": "Mute"},
+        {"key": "P", "action": "Pause"},
+        {"key": "L", "action": "Leaderboard"}
     ]
 }

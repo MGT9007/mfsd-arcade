@@ -290,13 +290,7 @@
                     return;
                 }
 
-                /* Re-load iframe if it was blanked */
-                if (el.iframe && state.gameUrl) {
-                    if (!el.iframe.src || el.iframe.src === 'about:blank') {
-                        loadGameIframe();
-                    }
-                }
-
+                /* Game state is preserved in the iframe — just restart timer */
                 startSession(data.session.remaining_seconds);
             })
             .catch(function (err) {
@@ -376,8 +370,8 @@
         hideOverlays();
         if (el.overlayPaused) el.overlayPaused.style.display = 'flex';
         if (el.pausedTime) el.pausedTime.textContent = formatTime(remaining);
-        /* Blank iframe to save resources while paused */
-        if (el.iframe) el.iframe.src = 'about:blank';
+        /* Keep the iframe alive so game state is preserved on resume.
+           The overlay covers the game visually while paused. */
     }
 
     function showExpired() {

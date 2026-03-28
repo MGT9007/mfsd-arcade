@@ -87,6 +87,57 @@
     color: var(--arc-muted);
 }
 
+/* ── Controls bar ── */
+.arc-controls-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--arc-surface);
+    border: 1px solid var(--arc-border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    font-size: 13px;
+}
+
+.arc-controls-label {
+    color: var(--arc-muted);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.arc-controls-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+}
+
+.arc-control-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.arc-key {
+    display: inline-block;
+    background: #21262d;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--arc-gold);
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.arc-action {
+    color: var(--arc-muted);
+    font-size: 12px;
+}
+
 /* ── Live session banner ── */
 .arc-live-banner {
     background: linear-gradient(135deg, #1a2332, #162218);

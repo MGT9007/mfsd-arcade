@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MFSD Arcade
  * Description: Coin-operated game arcade for MFSD students. Spend quest coins for timed play sessions on browser-based games.
- * Version: 2.1.1  
+ * Version: 3.0.0
  * Author: MisterT9007
  * Requires Plugins: mfsd-quest-log
  */
@@ -16,7 +16,7 @@ foreach (array('db', 'session', 'api', 'game-loader') as $f) {
 
 final class MFSD_Arcade {
 
-    const VERSION      = '2.1.1';
+    const VERSION      = '3.0.0';
     const OPTION_MPC   = 'mfsd_arcade_minutes_per_coin';   /* global: 1 coin = X minutes */
 
     public static function instance() {
@@ -168,7 +168,17 @@ final class MFSD_Arcade {
         wp_enqueue_style('mfsd-arcade');
         wp_enqueue_script('mfsd-arcade');
 
-        return $this->render_play($game, $balance, $mpc, $live);
+        /* Read controls from the game's manifest (if available) */
+        $controls = array();
+        $games_dir = plugin_dir_path(__FILE__) . 'games/' . $slug . '/mfsd-manifest.json';
+        if (file_exists($games_dir)) {
+            $manifest = json_decode(file_get_contents($games_dir), true);
+            if (!empty($manifest['controls'])) {
+                $controls = $manifest['controls'];
+            }
+        }
+
+        return $this->render_play($game, $balance, $mpc, $live, $controls);
     }
 
     /* ================================================================
@@ -240,7 +250,7 @@ final class MFSD_Arcade {
     /* ================================================================
        RENDER — Play screen (buy time + game iframe)
        ================================================================ */
-    private function render_play($game, $balance, $mpc, $live) {
+    private function render_play($game, $balance, $mpc, $live, $controls = array()) {
         ob_start();
         ?>
         <div id="mfsd-arcade-root" class="mfsd-arcade" data-mode="play" data-game-id="<?php echo (int) $game['id']; ?>">
@@ -254,6 +264,21 @@ final class MFSD_Arcade {
                     <span class="arc-balance" id="arc-balance"><?php echo (int) $balance; ?></span>
                 </div>
             </div>
+
+            <!-- Controls bar (from manifest) -->
+            <?php if (!empty($controls)): ?>
+            <div class="arc-controls-bar" id="arc-controls-bar">
+                <span class="arc-controls-label">🎮 Controls:</span>
+                <div class="arc-controls-list">
+                    <?php foreach ($controls as $c): ?>
+                    <span class="arc-control-item">
+                        <kbd class="arc-key"><?php echo esc_html($c['key']); ?></kbd>
+                        <span class="arc-action"><?php echo esc_html($c['action']); ?></span>
+                    </span>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <!-- Purchase panel (shown when no active session) -->
             <div class="arc-purchase-panel" id="arc-purchase-panel" style="<?php echo $live ? 'display:none;' : ''; ?>">

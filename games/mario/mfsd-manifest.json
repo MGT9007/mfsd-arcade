@@ -8,8 +8,8 @@
         "https://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"
     ],
     "head_scripts": [
-    "enjine.min.js",
-    "mario.min.js"
+        "enjine.min.js",
+        "mario.min.js"
     ],
     "stylesheets": [
         "mfsd-leaderboard.css"
@@ -18,5 +18,13 @@
         "mfsd-leaderboard.js",
         "mfsd-mario-hook.js"
     ],
-    "init_script": "$(document).ready(function() { new Enjine.Application().Initialize(new Mario.LoadingState(), 320, 240); });"
+    "init_script": "$(document).ready(function() { new Enjine.Application().Initialize(new Mario.LoadingState(), 320, 240); });",
+    "controls": [
+        {"key": "S", "action": "Start / Enter level"},
+        {"key": "← →", "action": "Move"},
+        {"key": "↓", "action": "Duck"},
+        {"key": "A", "action": "Jump"},
+        {"key": "S", "action": "Fire (Fire Mario)"},
+        {"key": "L", "action": "Leaderboard"}
+    ]
 }
