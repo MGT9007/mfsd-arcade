@@ -1,0 +1,21 @@
+{
+    "title": "Infinite Mario",
+    "canvas_id": "canvas",
+    "canvas_width": 640,
+    "canvas_height": 480,
+    "canvas_bg": "#000",
+    "cdn_scripts": [
+        "https://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"
+    ],
+    "head_scripts": [
+        "mario.min.js"
+    ],
+    "stylesheets": [
+        "mfsd-leaderboard.css"
+    ],
+    "body_scripts": [
+        "mfsd-leaderboard.js",
+        "mfsd-mario-hook.js"
+    ],
+    "init_script": "$(document).ready(function() { new Enjine.Application().Initialize(new Mario.LoadingState(), 320, 240); });"
+}
