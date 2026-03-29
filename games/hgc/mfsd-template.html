@@ -19,16 +19,19 @@
 
   window.__mfsdRewrite = rewrite;
 
+  /* Patch Audio constructor */
   var _Audio = window.Audio;
   window.Audio = function(src) { return new _Audio(rewrite(src)); };
   window.Audio.prototype = _Audio.prototype;
 
+  /* Patch Image.src */
   var _imgDesc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
   Object.defineProperty(HTMLImageElement.prototype, 'src', {
     set: function(v) { _imgDesc.set.call(this, rewrite(v)); },
     get: function()  { return _imgDesc.get.call(this); }
   });
 
+  /* Patch Audio/Video .src */
   var _audDesc = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'src');
   if (_audDesc && _audDesc.set) {
     Object.defineProperty(HTMLMediaElement.prototype, 'src', {
@@ -37,34 +40,31 @@
     });
   }
 
-  var _scrDesc = Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype, 'src');
-  if (_scrDesc && _scrDesc.set) {
-    Object.defineProperty(HTMLScriptElement.prototype, 'src', {
-      set: function(v) { _scrDesc.set.call(this, rewrite(v)); },
-      get: function()  { return _scrDesc.get.call(this); }
-    });
-  }
+  /* Patch setAttribute — catches RequireJS module loading which uses
+     element.setAttribute('src', url) to load scripts dynamically.
+     Also catches any other dynamic attribute-based asset loading. */
+  var _setAttribute = Element.prototype.setAttribute;
+  Element.prototype.setAttribute = function(name, value) {
+    if ((name === 'src' || name === 'href') && typeof value === 'string') {
+      value = rewrite(value);
+    }
+    return _setAttribute.call(this, name, value);
+  };
 
+  /* Patch XMLHttpRequest.open — for JSON level data */
   var _xhrOpen = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function(method, url) {
     arguments[1] = rewrite(url);
     return _xhrOpen.apply(this, arguments);
   };
 
+  /* Patch fetch */
   var _fetch = window.fetch;
   if (_fetch) {
     window.fetch = function(input, init) {
       if (typeof input === 'string') input = rewrite(input);
       return _fetch.call(this, input, init);
     };
-  }
-
-  var _linkDesc = Object.getOwnPropertyDescriptor(HTMLLinkElement.prototype, 'href');
-  if (_linkDesc && _linkDesc.set) {
-    Object.defineProperty(HTMLLinkElement.prototype, 'href', {
-      set: function(v) { _linkDesc.set.call(this, rewrite(v)); },
-      get: function()  { return _linkDesc.get.call(this); }
-    });
   }
 })();
 </script>
