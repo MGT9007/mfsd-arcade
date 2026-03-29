@@ -1,12 +1,10 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MFSD Arcade — Hyperspace Garbage Collection</title>
+<title>Hyperspace Garbage Collection</title>
 <script>
-/* ── MFSD Asset URL Rewriter ──
-   Patches all dynamic asset loading to route through the gated endpoint. */
+/* ── MFSD Asset URL Rewriter ── */
 (function(){
   var base = '{{ASSET_BASE}}';
   var tp   = '{{TOKEN_PARAM}}';
@@ -21,19 +19,16 @@
 
   window.__mfsdRewrite = rewrite;
 
-  /* Patch Audio constructor */
   var _Audio = window.Audio;
   window.Audio = function(src) { return new _Audio(rewrite(src)); };
   window.Audio.prototype = _Audio.prototype;
 
-  /* Patch Image.src */
   var _imgDesc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
   Object.defineProperty(HTMLImageElement.prototype, 'src', {
     set: function(v) { _imgDesc.set.call(this, rewrite(v)); },
     get: function()  { return _imgDesc.get.call(this); }
   });
 
-  /* Patch Audio/Video .src */
   var _audDesc = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'src');
   if (_audDesc && _audDesc.set) {
     Object.defineProperty(HTMLMediaElement.prototype, 'src', {
@@ -42,7 +37,6 @@
     });
   }
 
-  /* Patch Script.src — for RequireJS dynamic module loading */
   var _scrDesc = Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype, 'src');
   if (_scrDesc && _scrDesc.set) {
     Object.defineProperty(HTMLScriptElement.prototype, 'src', {
@@ -51,14 +45,12 @@
     });
   }
 
-  /* Patch XMLHttpRequest.open — for JSON level data */
   var _xhrOpen = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function(method, url) {
     arguments[1] = rewrite(url);
     return _xhrOpen.apply(this, arguments);
   };
 
-  /* Patch fetch */
   var _fetch = window.fetch;
   if (_fetch) {
     window.fetch = function(input, init) {
@@ -67,7 +59,6 @@
     };
   }
 
-  /* Patch Link.href — for dynamically created stylesheets */
   var _linkDesc = Object.getOwnPropertyDescriptor(HTMLLinkElement.prototype, 'href');
   if (_linkDesc && _linkDesc.set) {
     Object.defineProperty(HTMLLinkElement.prototype, 'href', {
@@ -77,15 +68,21 @@
   }
 })();
 </script>
-<link rel="stylesheet" href="{{ASSET_BASE}}?file=stylesheets%2Fapp.css&token={{TOKEN_PARAM}}">
+<link rel="stylesheet" href="{{ASSET_BASE}}?file=stylesheets%2Fscreen.css&token={{TOKEN_PARAM}}">
 <link rel="stylesheet" href="{{ASSET_BASE}}?file=mfsd-leaderboard.css&token={{TOKEN_PARAM}}">
+<meta name="viewport"
+  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 </head>
-<body>
-<!-- Game creates its own DOM — RequireJS bootstraps everything -->
-<script data-main="js/main" src="{{ASSET_BASE}}?file=js%2Frequire.js&token={{TOKEN_PARAM}}"></script>
+<body ontouchstart="">
 
-<!-- Leaderboard + hook -->
-<script src="{{ASSET_BASE}}?file=mfsd-leaderboard.js&token={{TOKEN_PARAM}}"></script>
-<script src="{{ASSET_BASE}}?file=mfsd-hgc-hook.js&token={{TOKEN_PARAM}}"></script>
+    <button class="material-btn" id="material-btn"></button>
+
+    <audio id="trigger-activate-audio" src="{{ASSET_BASE}}?file=sounds%2Factivate.mp3&token={{TOKEN_PARAM}}" type="audio/mpeg" preload="auto"></audio>
+
+    <script data-main="js/main" src="{{ASSET_BASE}}?file=js%2Frequire.js&token={{TOKEN_PARAM}}"></script>
+
+    <!-- Leaderboard + hook -->
+    <script src="{{ASSET_BASE}}?file=mfsd-leaderboard.js&token={{TOKEN_PARAM}}"></script>
+    <script src="{{ASSET_BASE}}?file=mfsd-hgc-hook.js&token={{TOKEN_PARAM}}"></script>
 </body>
 </html>

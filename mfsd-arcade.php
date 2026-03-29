@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MFSD Arcade
  * Description: Coin-operated game arcade for MFSD students. Spend quest coins for timed play sessions on browser-based games.
- * Version: 3.0.3
+ * Version: 3.0.4
  * Author: MisterT9007
  * Requires Plugins: mfsd-quest-log
  */
@@ -16,7 +16,7 @@ foreach (array('db', 'session', 'api', 'game-loader') as $f) {
 
 final class MFSD_Arcade {
 
-    const VERSION      = '3.0.3';
+    const VERSION      = '3.0.4';
     const OPTION_MPC   = 'mfsd_arcade_minutes_per_coin';   /* global: 1 coin = X minutes */
 
     public static function instance() {
