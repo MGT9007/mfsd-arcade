@@ -6,9 +6,7 @@
 <title>MFSD Arcade — Hyperspace Garbage Collection</title>
 <script>
 /* ── MFSD Asset URL Rewriter ──
-   Intercepts ALL relative URLs and routes them through the gated asset endpoint.
-   Patches: Audio, Image, MediaElement, Script (for RequireJS dynamic loading),
-   and XMLHttpRequest (for JSON level data). */
+   Patches all dynamic asset loading to route through the gated endpoint. */
 (function(){
   var base = '{{ASSET_BASE}}';
   var tp   = '{{TOKEN_PARAM}}';
@@ -21,7 +19,6 @@
     return base + '?file=' + encodeURIComponent(src) + '&token=' + tp;
   }
 
-  /* Expose rewrite for use by other scripts */
   window.__mfsdRewrite = rewrite;
 
   /* Patch Audio constructor */
@@ -45,7 +42,7 @@
     });
   }
 
-  /* Patch Script.src — critical for RequireJS which creates <script> tags dynamically */
+  /* Patch Script.src — for RequireJS dynamic module loading */
   var _scrDesc = Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype, 'src');
   if (_scrDesc && _scrDesc.set) {
     Object.defineProperty(HTMLScriptElement.prototype, 'src', {
@@ -54,25 +51,23 @@
     });
   }
 
-  /* Patch XMLHttpRequest.open — for JSON level data loaded via XHR */
+  /* Patch XMLHttpRequest.open — for JSON level data */
   var _xhrOpen = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function(method, url) {
     arguments[1] = rewrite(url);
     return _xhrOpen.apply(this, arguments);
   };
 
-  /* Patch fetch — in case any code uses fetch for resources */
+  /* Patch fetch */
   var _fetch = window.fetch;
   if (_fetch) {
     window.fetch = function(input, init) {
-      if (typeof input === 'string') {
-        input = rewrite(input);
-      }
+      if (typeof input === 'string') input = rewrite(input);
       return _fetch.call(this, input, init);
     };
   }
 
-  /* Patch Link stylesheet .href (for dynamically created stylesheets) */
+  /* Patch Link.href — for dynamically created stylesheets */
   var _linkDesc = Object.getOwnPropertyDescriptor(HTMLLinkElement.prototype, 'href');
   if (_linkDesc && _linkDesc.set) {
     Object.defineProperty(HTMLLinkElement.prototype, 'href', {
@@ -84,18 +79,12 @@
 </script>
 <link rel="stylesheet" href="{{ASSET_BASE}}?file=stylesheets%2Fapp.css&token={{TOKEN_PARAM}}">
 <link rel="stylesheet" href="{{ASSET_BASE}}?file=mfsd-leaderboard.css&token={{TOKEN_PARAM}}">
-<style>
-  html, body { margin: 0; padding: 0; overflow: hidden; background: #000; }
-  canvas { display: block; }
-  /* Hide the original game UI elements we don't need inside the arcade iframe */
-  .editor-toggle, .fullscreen-toggle { display: none !important; }
-</style>
 </head>
 <body>
-<!-- RequireJS bootstraps the game via data-main -->
+<!-- Game creates its own DOM — RequireJS bootstraps everything -->
 <script data-main="js/main" src="{{ASSET_BASE}}?file=js%2Frequire.js&token={{TOKEN_PARAM}}"></script>
 
-<!-- Leaderboard + hook (loaded after RequireJS starts, hook polls for game objects) -->
+<!-- Leaderboard + hook -->
 <script src="{{ASSET_BASE}}?file=mfsd-leaderboard.js&token={{TOKEN_PARAM}}"></script>
 <script src="{{ASSET_BASE}}?file=mfsd-hgc-hook.js&token={{TOKEN_PARAM}}"></script>
 </body>
