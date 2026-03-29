@@ -28,6 +28,8 @@ class MFSD_Arcade_Game_Loader {
         'gif'  => 'image/gif',
         'svg'  => 'image/svg+xml',
         'json' => 'application/json',
+        'html' => 'text/html',
+        'htm'  => 'text/html',
         'woff' => 'font/woff',
         'woff2'=> 'font/woff2',
         'ttf'  => 'font/ttf',
@@ -167,20 +169,15 @@ class MFSD_Arcade_Game_Loader {
         /* Strip leading slashes */
         $file = ltrim($file, '/');
 
-        /* Block directory traversal: reject any path with '..' or starting with '.' */
-        if (strpos($file, '..') !== false || strpos($file, './') !== false || $file === '') {
+        if ($file === '') {
             return new WP_Error('invalid_path', 'Invalid file path.', array('status' => 400));
         }
 
-        /* Block hidden files */
-        $segments = explode('/', $file);
-        foreach ($segments as $seg) {
-            if ($seg === '' || $seg[0] === '.') {
-                return new WP_Error('invalid_path', 'Invalid file path.', array('status' => 400));
-            }
-        }
-
-        /* Resolve the full path and verify it stays within the game directory */
+        /* Resolve the full path and verify it stays within the game directory.
+           realpath() resolves '..' segments and symlinks, then we check the
+           resolved path is still inside the game folder. This safely handles
+           RequireJS-style relative paths like js/views/../../templates/foo.html
+           while blocking any actual escape from the game directory. */
         $game_dir = realpath($this->games_dir . $slug);
         if (!$game_dir) {
             return new WP_Error('game_not_found', 'Game not found.', array('status' => 404));
@@ -193,6 +190,15 @@ class MFSD_Arcade_Game_Loader {
 
         if (!is_file($filepath)) {
             return new WP_Error('asset_not_found', 'Asset not found.', array('status' => 404));
+        }
+
+        /* Block hidden files (dotfiles) after resolution */
+        $resolved_relative = substr($filepath, strlen($game_dir) + 1);
+        $segments = explode(DIRECTORY_SEPARATOR, $resolved_relative);
+        foreach ($segments as $seg) {
+            if ($seg !== '' && $seg[0] === '.') {
+                return new WP_Error('invalid_path', 'Invalid file path.', array('status' => 400));
+            }
         }
 
         /* Check the extension is allowed */
