@@ -33,6 +33,8 @@ class MFSD_Arcade_Game_Loader {
         'woff' => 'font/woff',
         'woff2'=> 'font/woff2',
         'ttf'  => 'font/ttf',
+        'eot'  => 'application/vnd.ms-fontobject',
+        'otf'  => 'font/otf',
     );
 
     /** Base path to the games directory. */
@@ -210,9 +212,56 @@ class MFSD_Arcade_Game_Loader {
 
         /* Serve the file */
         header('Content-Type: ' . $mime);
-        header('Content-Length: ' . filesize($filepath));
         header('Cache-Control: private, max-age=3600');
-        readfile($filepath);
+
+        /* CSS files need url() references rewritten to gated asset URLs.
+           Without this, @font-face and background-image paths resolve relative
+           to the REST API URL, which is wrong. */
+        if ($ext === 'css') {
+            $css = file_get_contents($filepath);
+
+            /* Resolve the directory of this CSS file relative to the game root */
+            $css_dir = dirname($resolved_relative);
+
+            /* Build the asset base URL for this game */
+            $asset_base = rest_url('mfsd-arcade/v1/game-asset/' . $slug);
+
+            /* Rewrite url() references */
+            $css = preg_replace_callback(
+                '/url\(\s*[\'"]?([^\'"\)]+?)[\'"]?\s*\)/',
+                function ($m) use ($css_dir, $game_dir, $asset_base, $token) {
+                    $ref = $m[1];
+
+                    /* Skip data URIs, absolute URLs, and protocol-relative */
+                    if (preg_match('#^(data:|https?://|//)#i', $ref)) {
+                        return $m[0];
+                    }
+
+                    /* Resolve the referenced path relative to the CSS file's directory */
+                    $resolved = $css_dir . '/' . $ref;
+
+                    /* Normalise: collapse ../ segments */
+                    $parts = array();
+                    foreach (explode('/', $resolved) as $seg) {
+                        if ($seg === '..') {
+                            array_pop($parts);
+                        } elseif ($seg !== '.' && $seg !== '') {
+                            $parts[] = $seg;
+                        }
+                    }
+                    $clean_path = implode('/', $parts);
+
+                    return 'url(' . $asset_base . '?file=' . urlencode($clean_path) . '&token=' . urlencode($token) . ')';
+                },
+                $css
+            );
+
+            header('Content-Length: ' . strlen($css));
+            echo $css;
+        } else {
+            header('Content-Length: ' . filesize($filepath));
+            readfile($filepath);
+        }
         exit;
     }
 
