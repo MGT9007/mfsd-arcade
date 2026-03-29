@@ -1,0 +1,10 @@
+{
+    "title": "Hyperspace Garbage Collection",
+    "version": "1.0.0",
+    "uses_custom_template": true,
+    "controls": [
+        {"key": "WASD / Arrows", "action": "Move"},
+        {"key": "Space", "action": "Toggle matter / antimatter"},
+        {"key": "L", "action": "Leaderboard"}
+    ]
+}
