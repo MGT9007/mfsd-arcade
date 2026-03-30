@@ -9,23 +9,18 @@
   var base = '{{ASSET_BASE}}';
   var tp   = '{{TOKEN_PARAM}}';
 
-  /* The page URL base — RequireJS resolves relative paths against this.
-     e.g. page is /wp-json/mfsd-arcade/v1/game/hgc?token=...
-     so "js/main" resolves to /wp-json/mfsd-arcade/v1/game/js/main.js
-     We need to detect and rewrite those. */
+  /* The page URL base — used to detect absolute URLs that were resolved
+     against the game page (e.g. by RequireJS or XHR). */
   var pageBase = location.href.replace(/[?#].*$/, '').replace(/\/[^\/]*$/, '') + '/';
 
   function rewrite(src) {
     if (!src) return src;
 
-    /* Skip data URIs, blob URIs, and already-rewritten asset URLs */
+    /* Skip data URIs, blob URIs, already-rewritten */
     if (src.indexOf('data:') === 0 || src.indexOf('blob:') === 0 ||
         src.indexOf(base) !== -1) return src;
 
-    /* If it's an absolute URL that resolved against our game page,
-       extract the relative path and route through the asset endpoint.
-       e.g. https://mfsd.me/wp-json/mfsd-arcade/v1/game/js/main.js
-       becomes: /game-asset/hgc?file=js/main.js&token=xxx */
+    /* Absolute URL resolved against our game page — extract relative path */
     if (src.indexOf('://') !== -1 || src.indexOf('//') === 0) {
       if (src.indexOf(pageBase) === 0) {
         var relativePath = src.substring(pageBase.length).replace(/[?#].*$/, '');
@@ -33,26 +28,28 @@
           return base + '?file=' + encodeURIComponent(relativePath) + '&token=' + tp;
         }
       }
-      /* Truly external URL — leave it alone */
-      return src;
+      return src; /* truly external — leave alone */
     }
 
-    /* Relative URL — rewrite directly */
+    /* Relative URL */
     return base + '?file=' + encodeURIComponent(src) + '&token=' + tp;
   }
 
   window.__mfsdRewrite = rewrite;
 
+  /* Patch Audio constructor */
   var _Audio = window.Audio;
   window.Audio = function(src) { return new _Audio(rewrite(src)); };
   window.Audio.prototype = _Audio.prototype;
 
+  /* Patch Image.src */
   var _imgDesc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
   Object.defineProperty(HTMLImageElement.prototype, 'src', {
     set: function(v) { _imgDesc.set.call(this, rewrite(v)); },
     get: function()  { return _imgDesc.get.call(this); }
   });
 
+  /* Patch Audio/Video .src */
   var _audDesc = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'src');
   if (_audDesc && _audDesc.set) {
     Object.defineProperty(HTMLMediaElement.prototype, 'src', {
@@ -61,6 +58,7 @@
     });
   }
 
+  /* Patch setAttribute — catches some dynamic loading patterns */
   var _setAttribute = Element.prototype.setAttribute;
   Element.prototype.setAttribute = function(name, value) {
     if ((name === 'src' || name === 'href') && typeof value === 'string') {
@@ -69,12 +67,14 @@
     return _setAttribute.call(this, name, value);
   };
 
+  /* Patch XMLHttpRequest.open */
   var _xhrOpen = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function(method, url) {
     arguments[1] = rewrite(url);
     return _xhrOpen.apply(this, arguments);
   };
 
+  /* Patch fetch */
   var _fetch = window.fetch;
   if (_fetch) {
     window.fetch = function(input, init) {
@@ -95,9 +95,24 @@
 
     <audio id="trigger-activate-audio" src="{{ASSET_BASE}}?file=sounds%2Factivate.mp3&token={{TOKEN_PARAM}}" type="audio/mpeg" preload="auto"></audio>
 
-    <!-- Load require.js, then configure with relative baseUrl and kick off main -->
+    <!-- Load require.js -->
     <script src="{{ASSET_BASE}}?file=js%2Frequire.js&token={{TOKEN_PARAM}}"></script>
     <script>
+    /* Override RequireJS's script loader to rewrite module URLs through
+       the gated asset endpoint. require.load is the official extension
+       point — it's called with the resolved absolute URL before the
+       script element is created. This is more reliable than patching
+       HTMLScriptElement.prototype.src which breaks the HTML parser. */
+    (function() {
+      var origLoad = require.load;
+      require.load = function(context, moduleName, url) {
+        if (window.__mfsdRewrite) {
+          url = window.__mfsdRewrite(url);
+        }
+        return origLoad.call(this, context, moduleName, url);
+      };
+    })();
+
     requirejs.config({
         baseUrl: 'js',
         waitSeconds: 30
