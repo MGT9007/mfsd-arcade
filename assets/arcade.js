@@ -112,6 +112,7 @@
             } else if (cfg.liveSession.status === 'paused') {
                 state.remaining = parseInt(cfg.liveSession.remaining_seconds, 10) || 0;
                 state.status = 'paused';
+                loadGameIframe(); /* Load game even when paused — iframe starts blank on page load */
                 showGame();
                 showPaused(state.remaining);
             }
@@ -290,7 +291,13 @@
                     return;
                 }
 
-                /* Game state is preserved in the iframe — just restart timer */
+                /* Reload iframe if it's blank (e.g. after a page reload with paused session) */
+                if (el.iframe && state.gameUrl) {
+                    if (!el.iframe.src || el.iframe.src === 'about:blank') {
+                        loadGameIframe();
+                    }
+                }
+
                 startSession(data.session.remaining_seconds);
             })
             .catch(function (err) {
