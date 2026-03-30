@@ -9,11 +9,35 @@
   var base = '{{ASSET_BASE}}';
   var tp   = '{{TOKEN_PARAM}}';
 
+  /* The page URL base — RequireJS resolves relative paths against this.
+     e.g. page is /wp-json/mfsd-arcade/v1/game/hgc?token=...
+     so "js/main" resolves to /wp-json/mfsd-arcade/v1/game/js/main.js
+     We need to detect and rewrite those. */
+  var pageBase = location.href.replace(/[?#].*$/, '').replace(/\/[^\/]*$/, '') + '/';
+
   function rewrite(src) {
     if (!src) return src;
-    if (src.indexOf('://') !== -1 || src.indexOf('//') === 0 ||
-        src.indexOf('data:') === 0 || src.indexOf('blob:') === 0 ||
+
+    /* Skip data URIs, blob URIs, and already-rewritten asset URLs */
+    if (src.indexOf('data:') === 0 || src.indexOf('blob:') === 0 ||
         src.indexOf(base) !== -1) return src;
+
+    /* If it's an absolute URL that resolved against our game page,
+       extract the relative path and route through the asset endpoint.
+       e.g. https://mfsd.me/wp-json/mfsd-arcade/v1/game/js/main.js
+       becomes: /game-asset/hgc?file=js/main.js&token=xxx */
+    if (src.indexOf('://') !== -1 || src.indexOf('//') === 0) {
+      if (src.indexOf(pageBase) === 0) {
+        var relativePath = src.substring(pageBase.length).replace(/[?#].*$/, '');
+        if (relativePath) {
+          return base + '?file=' + encodeURIComponent(relativePath) + '&token=' + tp;
+        }
+      }
+      /* Truly external URL — leave it alone */
+      return src;
+    }
+
+    /* Relative URL — rewrite directly */
     return base + '?file=' + encodeURIComponent(src) + '&token=' + tp;
   }
 
@@ -71,8 +95,7 @@
 
     <audio id="trigger-activate-audio" src="{{ASSET_BASE}}?file=sounds%2Factivate.mp3&token={{TOKEN_PARAM}}" type="audio/mpeg" preload="auto"></audio>
 
-    <!-- Load require.js WITHOUT data-main. We configure it manually below
-         so that all module URLs stay relative and get caught by the rewriter. -->
+    <!-- Load require.js, then configure with relative baseUrl and kick off main -->
     <script src="{{ASSET_BASE}}?file=js%2Frequire.js&token={{TOKEN_PARAM}}"></script>
     <script>
     requirejs.config({
