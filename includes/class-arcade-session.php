@@ -138,8 +138,8 @@ class MFSD_Arcade_Session {
         }
 
         /* Active — update heartbeat, check time */
-        $now       = current_time('mysql');
-        $remaining = max(0, strtotime($session['expires_at']) - strtotime($now));
+        $now       = current_time('mysql', true); /* UTC */
+        $remaining = max(0, strtotime($session['expires_at'] . ' UTC') - time());
 
         $this->db->update_session($session['id'], array(
             'last_heartbeat' => $now,
@@ -171,8 +171,8 @@ class MFSD_Arcade_Session {
             );
         }
 
-        $now       = current_time('mysql');
-        $remaining = max(0, strtotime($session['expires_at']) - strtotime($now));
+        $now       = current_time('mysql', true); /* UTC */
+        $remaining = max(0, strtotime($session['expires_at'] . ' UTC') - time());
 
         $this->db->update_session($session['id'], array(
             'status'            => 'paused',
@@ -205,8 +205,8 @@ class MFSD_Arcade_Session {
             return array('status' => 'expired', 'remaining_seconds' => 0);
         }
 
-        $now        = current_time('mysql');
-        $expires_at = gmdate('Y-m-d H:i:s', strtotime($now) + $remaining);
+        $now        = current_time('mysql', true); /* UTC */
+        $expires_at = gmdate('Y-m-d H:i:s', time() + $remaining);
 
         $this->db->update_session($session['id'], array(
             'status'            => 'active',
@@ -236,7 +236,7 @@ class MFSD_Arcade_Session {
 
         $remaining = 0;
         if ($session['status'] === 'active') {
-            $remaining = max(0, strtotime($session['expires_at']) - strtotime(current_time('mysql')));
+            $remaining = max(0, strtotime($session['expires_at'] . ' UTC') - time());
             if ($remaining <= 0) {
                 $this->db->update_session($session['id'], array('status' => 'expired'));
                 return array('status' => 'expired', 'remaining_seconds' => 0);

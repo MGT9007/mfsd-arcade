@@ -127,27 +127,45 @@ class MFSD_Arcade_API {
     }
 
     public function heartbeat($req) {
+        $token = $req->get_param('token');
+        if (!$this->token_belongs_to_current_user($token)) {
+            return new WP_Error('forbidden', 'Forbidden.', array('status' => 403));
+        }
         $mgr = new MFSD_Arcade_Session();
-        $result = $mgr->heartbeat($req->get_param('token'));
+        $result = $mgr->heartbeat($token);
 
         if (is_wp_error($result)) return $result;
         return rest_ensure_response(array('ok' => true, 'session' => $result));
     }
 
     public function pause($req) {
+        $token = $req->get_param('token');
+        if (!$this->token_belongs_to_current_user($token)) {
+            return new WP_Error('forbidden', 'Forbidden.', array('status' => 403));
+        }
         $mgr = new MFSD_Arcade_Session();
-        $result = $mgr->pause($req->get_param('token'));
+        $result = $mgr->pause($token);
 
         if (is_wp_error($result)) return $result;
         return rest_ensure_response(array('ok' => true, 'session' => $result));
     }
 
     public function resume($req) {
+        $token = $req->get_param('token');
+        if (!$this->token_belongs_to_current_user($token)) {
+            return new WP_Error('forbidden', 'Forbidden.', array('status' => 403));
+        }
         $mgr = new MFSD_Arcade_Session();
-        $result = $mgr->resume($req->get_param('token'));
+        $result = $mgr->resume($token);
 
         if (is_wp_error($result)) return $result;
         return rest_ensure_response(array('ok' => true, 'session' => $result));
+    }
+
+    private function token_belongs_to_current_user($token) {
+        $db      = new MFSD_Arcade_DB();
+        $session = $db->get_session_by_token($token);
+        return $session && (int) $session['student_id'] === get_current_user_id();
     }
 
     public function get_balance($req) {

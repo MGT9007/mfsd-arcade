@@ -427,13 +427,14 @@
                     apiBase:  cfg.restBase,
                     nonce:    cfg.nonce,
                     gameSlug: cfg.game.slug,
-                }, '*');
+                }, window.location.origin);
             } catch (e) { /* cross-origin safety */ }
         });
     }
 
     /* Listen for leaderboard-closed message from game iframe */
     window.addEventListener('message', function (e) {
+        if (e.origin !== window.location.origin) return;
         if (e.data && e.data.type === 'mfsd-leaderboard-closed') {
             /* Game dismissed leaderboard — nothing to do, game continues */
         }
