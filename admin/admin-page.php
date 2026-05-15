@@ -200,7 +200,14 @@ $categories = array('retro' => 'Retro', 'puzzle' => 'Puzzle', 'platformer' => 'P
                         </select>
                     </td></tr>
                     <tr><th>Iframe URL</th><td><input type="url" name="game_iframe_url" id="edit-game-url" style="width:100%;" placeholder="Blank = internal game"><p class="description">Leave blank for internal games (served from plugin). Enter URL for external games.</p></td></tr>
-                    <tr><th>Thumbnail URL</th><td><input type="url" name="game_thumbnail_url" id="edit-game-thumb" style="width:100%;"></td></tr>
+                    <tr><th>Thumbnail</th><td>
+                        <div id="edit-thumb-preview" style="margin-bottom:8px;display:none;">
+                            <img id="edit-thumb-img" src="" style="max-width:150px;max-height:100px;border:1px solid #ddd;border-radius:4px;display:block;">
+                        </div>
+                        <input type="hidden" name="game_thumbnail_url" id="edit-game-thumb" value="">
+                        <button type="button" class="button" id="edit-thumb-btn">Select Image</button>
+                        <button type="button" class="button" id="edit-thumb-remove" style="display:none;margin-left:4px;">Remove</button>
+                    </td></tr>
                     <tr><th>Min coins</th><td><input type="number" name="game_min_coins" id="edit-game-min" min="1" max="100" style="width:80px;"></td></tr>
                     <tr><th>Sort order</th><td><input type="number" name="game_sort_order" id="edit-game-order" min="0" style="width:80px;"></td></tr>
                     <tr><th>Active</th><td><label><input type="checkbox" name="game_active" id="edit-game-active" value="1"> Visible in arcade</label></td></tr>
@@ -268,7 +275,15 @@ $categories = array('retro' => 'Retro', 'puzzle' => 'Puzzle', 'platformer' => 'P
                     </select>
                 </td></tr>
                 <tr><th>Iframe URL</th><td><input type="url" name="game_iframe_url" style="width:100%;" placeholder="Leave blank for internal games"><p class="description"><strong>Internal game:</strong> leave blank — game files must be in <code>mfsd-arcade/games/{slug}/</code> inside the plugin. They are served through a session-gated endpoint (no direct URL access).<br><strong>External game:</strong> enter the full URL to the game's HTML file.</p></td></tr>
-                <tr><th>Thumbnail URL</th><td><input type="url" name="game_thumbnail_url" style="width:100%;" placeholder="Optional — displayed in the lobby grid"></td></tr>
+                <tr><th>Thumbnail</th><td>
+                    <div id="add-thumb-preview" style="margin-bottom:8px;display:none;">
+                        <img id="add-thumb-img" src="" style="max-width:150px;max-height:100px;border:1px solid #ddd;border-radius:4px;display:block;">
+                    </div>
+                    <input type="hidden" name="game_thumbnail_url" id="add-thumb-url" value="">
+                    <button type="button" class="button" id="add-thumb-btn">Select Image</button>
+                    <button type="button" class="button" id="add-thumb-remove" style="display:none;margin-left:4px;">Remove</button>
+                    <p class="description" style="margin-top:6px;">Optional — displayed in the lobby grid.</p>
+                </td></tr>
                 <tr><th>Min coins</th><td><input type="number" name="game_min_coins" min="1" max="100" value="1" style="width:80px;"><p class="description">Minimum coins to start a session. At current rate: 1 coin = <?php echo esc_html($mpc); ?> min.</p></td></tr>
                 <tr><th>Sort order</th><td><input type="number" name="game_sort_order" min="0" value="0" style="width:80px;"><p class="description">Lower numbers appear first.</p></td></tr>
                 <tr><th>Active</th><td><label><input type="checkbox" name="game_active" value="1" checked> Visible in arcade</label></td></tr>
@@ -290,17 +305,67 @@ function arcTab(e, tabId) {
 }
 
 function arcEditGame(g) {
-    document.getElementById('edit-game-id').value    = g.id;
-    document.getElementById('edit-game-title').value  = g.title;
-    document.getElementById('edit-game-slug').value   = g.slug;
-    document.getElementById('edit-game-desc').value   = g.description || '';
-    document.getElementById('edit-game-cat').value    = g.category;
-    document.getElementById('edit-game-url').value    = g.iframe_url;
-    document.getElementById('edit-game-thumb').value  = g.thumbnail_url || '';
-    document.getElementById('edit-game-min').value    = g.min_coins;
-    document.getElementById('edit-game-order').value  = g.sort_order;
+    document.getElementById('edit-game-id').value      = g.id;
+    document.getElementById('edit-game-title').value   = g.title;
+    document.getElementById('edit-game-slug').value    = g.slug;
+    document.getElementById('edit-game-desc').value    = g.description || '';
+    document.getElementById('edit-game-cat').value     = g.category;
+    document.getElementById('edit-game-url').value     = g.iframe_url;
+    document.getElementById('edit-game-thumb').value   = g.thumbnail_url || '';
+    document.getElementById('edit-game-min').value     = g.min_coins;
+    document.getElementById('edit-game-order').value   = g.sort_order;
     document.getElementById('edit-game-active').checked = g.active == 1;
+
+    /* Sync thumbnail preview */
+    var url = g.thumbnail_url || '';
+    var preview = document.getElementById('edit-thumb-preview');
+    var img     = document.getElementById('edit-thumb-img');
+    var remove  = document.getElementById('edit-thumb-remove');
+    if (url) {
+        img.src = url;
+        preview.style.display = 'block';
+        remove.style.display  = '';
+    } else {
+        img.src = '';
+        preview.style.display = 'none';
+        remove.style.display  = 'none';
+    }
+
     document.getElementById('arc-edit-game-form').style.display = 'block';
     document.getElementById('arc-edit-game-form').scrollIntoView({behavior:'smooth'});
 }
+
+/* ── Media picker helper ── */
+function arcMediaPicker(btnId, removeId, inputId, previewId, imgId) {
+    var frame;
+    document.getElementById(btnId).addEventListener('click', function() {
+        if (frame) { frame.open(); return; }
+        frame = wp.media({
+            title: 'Select Game Thumbnail',
+            button: { text: 'Use this image' },
+            multiple: false,
+            library: { type: 'image' }
+        });
+        frame.on('select', function() {
+            var att = frame.state().get('selection').first().toJSON();
+            var url = att.sizes && att.sizes.thumbnail ? att.sizes.thumbnail.url : att.url;
+            document.getElementById(inputId).value      = att.url;
+            document.getElementById(imgId).src          = url;
+            document.getElementById(previewId).style.display = 'block';
+            document.getElementById(removeId).style.display  = '';
+        });
+        frame.open();
+    });
+    document.getElementById(removeId).addEventListener('click', function() {
+        document.getElementById(inputId).value           = '';
+        document.getElementById(imgId).src               = '';
+        document.getElementById(previewId).style.display = 'none';
+        this.style.display = 'none';
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    arcMediaPicker('add-thumb-btn',  'add-thumb-remove',  'add-thumb-url',   'add-thumb-preview',  'add-thumb-img');
+    arcMediaPicker('edit-thumb-btn', 'edit-thumb-remove', 'edit-game-thumb', 'edit-thumb-preview', 'edit-thumb-img');
+});
 </script>

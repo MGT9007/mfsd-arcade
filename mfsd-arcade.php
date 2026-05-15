@@ -26,11 +26,12 @@ final class MFSD_Arcade {
 
     private function __construct() {
         register_activation_hook(__FILE__, array($this, 'install'));
-        add_action('init',          array($this, 'register_assets'));
-        add_shortcode('mfsd_arcade',     array($this, 'shortcode_lobby'));
-        add_shortcode('mfsd_arcade_play', array($this, 'shortcode_play'));
-        add_action('rest_api_init', array($this, 'register_routes'));
-        add_action('admin_menu',    array($this, 'admin_menu'));
+        add_action('init',                   array($this, 'register_assets'));
+        add_shortcode('mfsd_arcade',         array($this, 'shortcode_lobby'));
+        add_shortcode('mfsd_arcade_play',    array($this, 'shortcode_play'));
+        add_action('rest_api_init',          array($this, 'register_routes'));
+        add_action('admin_menu',             array($this, 'admin_menu'));
+        add_action('admin_enqueue_scripts',  array($this, 'admin_enqueue'));
     }
 
     /* ================================================================
@@ -393,6 +394,11 @@ final class MFSD_Arcade {
     public function admin_page() {
         if (!current_user_can('manage_options')) wp_die('Unauthorized');
         include __DIR__ . '/admin/admin-page.php';
+    }
+
+    public function admin_enqueue($hook) {
+        if ($hook !== 'toplevel_page_mfsd-arcade') return;
+        wp_enqueue_media();
     }
 
     /* ================================================================
