@@ -83,7 +83,27 @@
         if (e.data && e.data.type === 'mfsd-leaderboard-closed') {
             onLeaderboardClosed();
         }
+        if (e.data && e.data.type === 'mfsd-time-expired') {
+            onTimeExpired();
+        }
     });
+
+    function onTimeExpired() {
+        /* If leaderboard is already showing from a game-over, let it complete normally */
+        if (leaderboardActive) return;
+
+        var score = (typeof Game !== 'undefined') ? (Game.score || 0) : 0;
+        var gameActive = (typeof Game !== 'undefined' && Game.FSM &&
+            Game.FSM.state !== 'waiting' && Game.FSM.state !== 'boot');
+
+        if (gameActive && score > 0 && typeof MFSDLeaderboard !== 'undefined' && MFSDLeaderboard.isConnected()) {
+            leaderboardActive = true;
+            MFSDLeaderboard.onGameOver(score);
+        } else {
+            /* Nothing to submit — tell parent to proceed with teardown */
+            window.parent.postMessage({ type: 'mfsd-leaderboard-closed' }, '*');
+        }
+    }
 
     /* Direct DOM check (same-window close via Continue button) */
     var closeObserver = setInterval(function () {

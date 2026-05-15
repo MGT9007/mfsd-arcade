@@ -101,7 +101,23 @@
         if (e.data && e.data.type === 'mfsd-leaderboard-closed') {
             onLeaderboardClosed();
         }
+        if (e.data && e.data.type === 'mfsd-time-expired') {
+            onTimeExpired();
+        }
     });
+
+    function onTimeExpired() {
+        /* If leaderboard is already showing from a game-over, let it complete normally */
+        if (leaderboardActive) return;
+
+        var score = mfsdScore || 0;
+        if (score > 0 && typeof MFSDLeaderboard !== 'undefined' && MFSDLeaderboard.isConnected()) {
+            leaderboardActive = true;
+            MFSDLeaderboard.onGameOver(score);
+        } else {
+            window.parent.postMessage({ type: 'mfsd-leaderboard-closed' }, '*');
+        }
+    }
 
     /* Direct DOM check (same-window close) */
     setInterval(function () {

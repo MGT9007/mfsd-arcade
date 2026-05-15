@@ -6,13 +6,15 @@
 
     /* ── State ── */
     var state = {
-        token:      null,
-        remaining:  0,
-        status:     'none',     /* none | active | paused | expired */
-        timerRef:   null,
-        heartbeatRef: null,
-        balance:    cfg.balance || 0,
-        gameUrl:    null,       /* the gated iframe URL for the current session */
+        token:               null,
+        remaining:           0,
+        status:              'none',  /* none | active | paused | expired */
+        timerRef:            null,
+        heartbeatRef:        null,
+        balance:             cfg.balance || 0,
+        gameUrl:             null,    /* the gated iframe URL for the current session */
+        awaitingScoreSubmit: false,   /* true while waiting for game to submit score on expiry */
+        scoreSubmitTimeout:  null,
     };
 
     /* ── DOM refs (populated on init) ── */
@@ -315,11 +317,33 @@
         state.token = null;
         stopTimer();
         stopHeartbeat();
-
-        /* Blank the iframe */
-        if (el.iframe) el.iframe.src = 'about:blank';
-
         renderTimer(0);
+
+        /* Ask the game iframe to submit the player's current score before teardown.
+           Keep the iframe alive so the player can enter their initials. */
+        if (el.iframe && el.iframe.src && el.iframe.src !== 'about:blank') {
+            state.awaitingScoreSubmit = true;
+            try {
+                el.iframe.contentWindow.postMessage(
+                    { type: 'mfsd-time-expired' },
+                    window.location.origin
+                );
+            } catch (e) {}
+
+            /* Fallback: tear down after 45s if the game never responds */
+            state.scoreSubmitTimeout = setTimeout(function () {
+                if (state.awaitingScoreSubmit) {
+                    state.awaitingScoreSubmit = false;
+                    finalizeExpiry();
+                }
+            }, 45000);
+        } else {
+            finalizeExpiry();
+        }
+    }
+
+    function finalizeExpiry() {
+        if (el.iframe) el.iframe.src = 'about:blank';
         showExpired();
         refreshBalance();
     }
@@ -432,11 +456,17 @@
         });
     }
 
-    /* Listen for leaderboard-closed message from game iframe */
+    /* Listen for messages from the game iframe */
     window.addEventListener('message', function (e) {
         if (e.origin !== window.location.origin) return;
         if (e.data && e.data.type === 'mfsd-leaderboard-closed') {
-            /* Game dismissed leaderboard — nothing to do, game continues */
+            if (state.awaitingScoreSubmit) {
+                /* Player finished submitting their score after time expired */
+                state.awaitingScoreSubmit = false;
+                clearTimeout(state.scoreSubmitTimeout);
+                finalizeExpiry();
+            }
+            /* Otherwise: normal in-game leaderboard dismiss — session continues */
         }
     });
 

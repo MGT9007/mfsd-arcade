@@ -200,7 +200,22 @@
         if (e.data && e.data.type === 'mfsd-leaderboard-closed') {
             onLeaderboardClosed();
         }
+        if (e.data && e.data.type === 'mfsd-time-expired') {
+            onTimeExpired();
+        }
     });
+
+    function onTimeExpired() {
+        if (leaderboardActive) return;
+
+        var score = levelsCompleted || 0;
+        if (score > 0 && typeof MFSDLeaderboard !== 'undefined' && MFSDLeaderboard.isConnected()) {
+            leaderboardActive = true;
+            MFSDLeaderboard.onGameOver(score);
+        } else {
+            window.parent.postMessage({ type: 'mfsd-leaderboard-closed' }, '*');
+        }
+    }
 
     setInterval(function () {
         if (!leaderboardActive) return;
