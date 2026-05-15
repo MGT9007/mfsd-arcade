@@ -20,7 +20,7 @@
             position: fixed; inset: 0;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            background: #000; z-index: 50;
+            background: #1a0a2e; z-index: 50;
         }
         #mfsd-loading.hidden { display: none; }
         #mfsd-spinner {
@@ -104,10 +104,25 @@
         postRun: [],
     };
 
-    window.onerror = function () {
-        if (statusEl) statusEl.textContent = 'Error — check browser console';
+    window.onerror = function (msg, src, line, col, err) {
+        var text = 'Error: ' + (msg || err || 'unknown');
+        console.error('[WipEout template]', text, src, line);
+        if (statusEl) { statusEl.textContent = text; statusEl.style.color = '#f66'; }
+        if (loadingEl) loadingEl.classList.remove('hidden');
         if (progressEl) progressEl.hidden = true;
     };
+
+    /* WebGL check — runs after DOM ready, before wipeout.js */
+    function checkWebGL() {
+        var c = document.createElement('canvas');
+        var gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+        if (!gl) {
+            console.error('[WipEout] WebGL not available in this context');
+            if (statusEl) { statusEl.textContent = 'WebGL not available — game cannot run'; statusEl.style.color = '#f66'; }
+        } else {
+            console.log('[WipEout] WebGL OK:', gl.getParameter(gl.RENDERER));
+        }
+    }
     </script>
 </head>
 <body>
@@ -126,6 +141,7 @@
     progressEl     = document.getElementById('mfsd-progress');
     spinnerEl      = document.getElementById('mfsd-spinner');
     loadingEl      = document.getElementById('mfsd-loading');
+    checkWebGL();
     Module.setStatus('Downloading game…');
     </script>
 
