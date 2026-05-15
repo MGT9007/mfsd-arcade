@@ -216,11 +216,12 @@ class MFSD_Arcade_Game_Loader {
         header('Content-Type: ' . $mime);
         header('Cache-Control: private, max-age=3600');
 
-        /* For binary files, disable compression and clear any output buffer.
-           PHP/WordPress gzip-encoding corrupts binary data (wasm, data files)
-           and causes Content-Length mismatches that break Emscripten loading. */
+        /* For binary files, disable compression, clear output buffers, and
+           remove PHP execution time limit. wipeout.data is 145MB — without
+           these, PHP crashes with a 500/HTTP2-protocol-error mid-stream. */
         if (in_array($ext, array('wasm', 'data', 'wav', 'mp3', 'ogg', 'png', 'jpg', 'jpeg', 'gif'))) {
             header('Content-Encoding: identity');
+            @set_time_limit(0);
             while (ob_get_level()) ob_end_clean();
         }
 
