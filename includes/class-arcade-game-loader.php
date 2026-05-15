@@ -216,6 +216,14 @@ class MFSD_Arcade_Game_Loader {
         header('Content-Type: ' . $mime);
         header('Cache-Control: private, max-age=3600');
 
+        /* For binary files, disable compression and clear any output buffer.
+           PHP/WordPress gzip-encoding corrupts binary data (wasm, data files)
+           and causes Content-Length mismatches that break Emscripten loading. */
+        if (in_array($ext, array('wasm', 'data', 'wav', 'mp3', 'ogg', 'png', 'jpg', 'jpeg', 'gif'))) {
+            header('Content-Encoding: identity');
+            while (ob_get_level()) ob_end_clean();
+        }
+
         /* CSS files need url() references rewritten to gated asset URLs.
            Without this, @font-face and background-image paths resolve relative
            to the REST API URL, which is wrong. */
