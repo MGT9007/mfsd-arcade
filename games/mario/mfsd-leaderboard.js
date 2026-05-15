@@ -106,6 +106,14 @@
 
         document.body.appendChild(overlay);
 
+        /* ── Block game keyboard handlers while overlay is open ──
+           Games register keydown/keyup on document (e.g. Asteroids mute key M).
+           Stopping propagation here prevents those handlers from firing when
+           the player is typing initials, without affecting the input boxes. */
+        ['keydown', 'keyup', 'keypress'].forEach(function (evt) {
+            overlay.addEventListener(evt, function (e) { e.stopPropagation(); }, false);
+        });
+
         /* ── Wire up initials input boxes ── */
         var boxContainer = document.getElementById('mfsd-lb-boxes');
         for (var i = 0; i < 5; i++) {
