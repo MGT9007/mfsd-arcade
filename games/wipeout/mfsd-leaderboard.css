@@ -1,0 +1,238 @@
+/* ================================================================
+   MFSD Arcade Leaderboard — In-Game Overlay Styles
+   Drop this + mfsd-leaderboard.js into any game.
+   ================================================================ */
+
+.mfsd-lb-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.88);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #e0e0e0;
+}
+
+.mfsd-lb-panel {
+    background: #0d1117;
+    border: 2px solid #30363d;
+    border-radius: 16px;
+    padding: 32px;
+    width: 90%;
+    max-width: 420px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+/* ── Screens ── */
+.mfsd-lb-screen { }
+
+.mfsd-lb-title {
+    margin: 0 0 20px;
+    font-size: 24px;
+    font-weight: 700;
+    color: #e0e0e0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* ── Score display ── */
+.mfsd-lb-score-display {
+    margin-bottom: 24px;
+}
+
+.mfsd-lb-score-label {
+    display: block;
+    font-size: 13px;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+
+.mfsd-lb-score-value {
+    display: block;
+    font-size: 48px;
+    font-weight: 800;
+    color: #fbbf24;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+/* ── Initials entry ── */
+.mfsd-lb-initials-wrap {
+    margin-bottom: 24px;
+}
+
+.mfsd-lb-initials-label {
+    display: block;
+    font-size: 14px;
+    color: #8b949e;
+    margin-bottom: 12px;
+}
+
+.mfsd-lb-initials-boxes {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.mfsd-lb-char-box {
+    width: 48px;
+    height: 56px;
+    border: 2px solid #30363d;
+    border-radius: 8px;
+    background: #161b22;
+    color: #fbbf24;
+    font-size: 28px;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+    outline: none;
+    transition: border-color 0.2s;
+    caret-color: #fbbf24;
+}
+
+.mfsd-lb-char-box:focus {
+    border-color: #58a6ff;
+    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+}
+
+.mfsd-lb-initials-hint {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: #6e7681;
+}
+
+/* ── Buttons ── */
+.mfsd-lb-btn {
+    display: inline-block;
+    padding: 12px 28px;
+    border-radius: 8px;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    color: #fff;
+}
+
+.mfsd-lb-btn:hover { opacity: 0.85; }
+.mfsd-lb-btn:active { transform: scale(0.97); }
+.mfsd-lb-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.mfsd-lb-btn-submit { background: #28a745; }
+.mfsd-lb-btn-close { background: #58a6ff; margin-top: 16px; }
+
+/* ── Leaderboard table ── */
+.mfsd-lb-table-wrap {
+    margin: 0 -8px 12px;
+}
+
+.mfsd-lb-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+
+.mfsd-lb-table thead th {
+    color: #8b949e;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 6px 10px;
+    border-bottom: 1px solid #21262d;
+    text-align: left;
+}
+
+.mfsd-lb-table thead th:first-child { width: 36px; text-align: center; }
+.mfsd-lb-table thead th:last-child { text-align: right; }
+
+.mfsd-lb-table tbody tr {
+    border-bottom: 1px solid #161b22;
+    transition: background 0.15s;
+}
+
+.mfsd-lb-table tbody tr:hover { background: rgba(88, 166, 255, 0.05); }
+
+.mfsd-lb-table tbody td {
+    padding: 8px 10px;
+}
+
+.mfsd-lb-rank {
+    text-align: center;
+    color: #8b949e;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Top 3 rank colours */
+.mfsd-lb-table tbody tr:nth-child(1) .mfsd-lb-rank { color: #fbbf24; }
+.mfsd-lb-table tbody tr:nth-child(2) .mfsd-lb-rank { color: #c0c0c0; }
+.mfsd-lb-table tbody tr:nth-child(3) .mfsd-lb-rank { color: #cd7f32; }
+
+.mfsd-lb-name {
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.mfsd-lb-pts {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: #fbbf24;
+}
+
+/* Highlighted row (current player) */
+.mfsd-lb-highlight {
+    background: rgba(251, 191, 36, 0.1) !important;
+}
+.mfsd-lb-highlight td {
+    color: #fbbf24 !important;
+}
+
+/* ── Rank banner ── */
+.mfsd-lb-rank-banner {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(168, 85, 247, 0.1));
+    border: 1px solid rgba(251, 191, 36, 0.25);
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: #e0e0e0;
+}
+
+/* ── Meta line ── */
+.mfsd-lb-meta {
+    font-size: 13px;
+    color: #8b949e;
+    margin-top: 8px;
+}
+
+/* ── Loading spinner ── */
+.mfsd-lb-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #30363d;
+    border-top-color: #58a6ff;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    animation: mfsd-lb-spin 0.8s linear infinite;
+}
+
+@keyframes mfsd-lb-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── Responsive ── */
+@media (max-width: 500px) {
+    .mfsd-lb-panel { padding: 20px 16px; }
+    .mfsd-lb-score-value { font-size: 36px; }
+    .mfsd-lb-char-box { width: 40px; height: 48px; font-size: 22px; }
+    .mfsd-lb-table { font-size: 13px; }
+    .mfsd-lb-name { font-size: 14px; }
+}

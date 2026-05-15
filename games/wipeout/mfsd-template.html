@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="viewport-fit=cover, user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+    <title>WipEout — MFSD Arcade</title>
+    <link rel="stylesheet" href="{{ASSET_BASE}}?file=mfsd-leaderboard.css&token={{TOKEN_PARAM}}">
+    <style>
+        html, body {
+            margin: 0; padding: 0; overflow: hidden;
+            background: #000; color: #ccc;
+            font-family: monospace; font-size: 13px;
+        }
+        canvas {
+            display: block;
+            width: 100%; height: 100vh;
+            object-fit: contain;
+        }
+        #mfsd-loading {
+            position: fixed; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: #000; z-index: 50;
+        }
+        #mfsd-loading.hidden { display: none; }
+        #mfsd-spinner {
+            width: 48px; height: 48px; border-radius: 50%;
+            border: 4px solid #222;
+            border-top-color: #ffc603;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #mfsd-status { color: #aaa; margin-bottom: 8px; }
+        #mfsd-progress { width: 200px; }
+    </style>
+
+    <script>
+    /* ── MFSD asset routing — ALL Emscripten file requests go through the gated endpoint ── */
+    var MFSD_ASSET_BASE  = '{{ASSET_BASE}}';
+    var MFSD_TOKEN_PARAM = '{{TOKEN_PARAM}}';
+
+    function mfsdFileUrl(filename) {
+        /* Strip any path prefix (Emscripten may pass 'build/wasm/wipeout.data') */
+        var bare = filename.split('/').pop();
+        return MFSD_ASSET_BASE + '?file=' + encodeURIComponent(bare) + '&token=' + MFSD_TOKEN_PARAM;
+    }
+
+    var statusEl   = null;
+    var progressEl = null;
+    var spinnerEl  = null;
+    var loadingEl  = null;
+
+    /* Module must be defined before wipeout.js is loaded */
+    var Module = {
+        canvas: null, /* set after DOM ready */
+
+        /* Route WASM + data file fetches through the session-gated endpoint */
+        locateFile: function (path, prefix) {
+            return mfsdFileUrl(path);
+        },
+
+        /* Intercept console output for score detection */
+        print: function (text) {
+            console.log('[WipEout]', text);
+            if (window._mfsdWipeoutPrint) window._mfsdWipeoutPrint(text);
+        },
+
+        printErr: function (text) {
+            console.warn('[WipEout]', text);
+        },
+
+        setStatus: function (text) {
+            if (!statusEl) return;
+            if (!text) {
+                /* Loading complete */
+                if (loadingEl) loadingEl.classList.add('hidden');
+                return;
+            }
+            var m = text.match(/([^(]+)\((\d+(?:\.\d+)?)\/(\d+)\)/);
+            if (m) {
+                statusEl.textContent = m[1].trim();
+                if (progressEl) {
+                    progressEl.hidden = false;
+                    progressEl.value  = parseFloat(m[2]);
+                    progressEl.max    = parseFloat(m[3]);
+                }
+            } else {
+                statusEl.textContent = text;
+                if (progressEl) progressEl.hidden = true;
+            }
+        },
+
+        totalDependencies: 0,
+        monitorRunDependencies: function (left) {
+            this.totalDependencies = Math.max(this.totalDependencies, left);
+            Module.setStatus(left
+                ? 'Preparing… (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')'
+                : ''
+            );
+        },
+
+        preRun: [],
+        postRun: [],
+    };
+
+    window.onerror = function () {
+        if (statusEl) statusEl.textContent = 'Error — check browser console';
+        if (progressEl) progressEl.hidden = true;
+    };
+    </script>
+</head>
+<body>
+    <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+
+    <div id="mfsd-loading">
+        <div id="mfsd-spinner"></div>
+        <div id="mfsd-status">Loading WipEout…</div>
+        <progress id="mfsd-progress" value="0" max="100" hidden></progress>
+    </div>
+
+    <script>
+    /* Wire up Module.canvas and loading UI elements after DOM is ready */
+    Module.canvas  = document.getElementById('canvas');
+    statusEl       = document.getElementById('mfsd-status');
+    progressEl     = document.getElementById('mfsd-progress');
+    spinnerEl      = document.getElementById('mfsd-spinner');
+    loadingEl      = document.getElementById('mfsd-loading');
+    Module.setStatus('Downloading game…');
+    </script>
+
+    <!-- Game engine — loaded through session-gated endpoint -->
+    <script src="{{ASSET_BASE}}?file=wipeout.js&token={{TOKEN_PARAM}}"></script>
+
+    <!-- MFSD leaderboard + WipEout score hook -->
+    <script src="{{ASSET_BASE}}?file=mfsd-leaderboard.js&token={{TOKEN_PARAM}}"></script>
+    <script src="{{ASSET_BASE}}?file=mfsd-wipeout-hook.js&token={{TOKEN_PARAM}}"></script>
+</body>
+</html>

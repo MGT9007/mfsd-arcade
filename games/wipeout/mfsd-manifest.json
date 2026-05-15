@@ -1,0 +1,13 @@
+{
+    "title": "WipEout",
+    "controls": [
+        {"key": "← →", "action": "Steer"},
+        {"key": "↑ ↓", "action": "Pitch"},
+        {"key": "X", "action": "Thrust"},
+        {"key": "Z", "action": "Fire weapon"},
+        {"key": "C", "action": "Brake left"},
+        {"key": "V", "action": "Brake right"},
+        {"key": "A", "action": "Change view"},
+        {"key": "L", "action": "Leaderboard"}
+    ]
+}

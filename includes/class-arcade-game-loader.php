@@ -35,6 +35,8 @@ class MFSD_Arcade_Game_Loader {
         'ttf'  => 'font/ttf',
         'eot'  => 'application/vnd.ms-fontobject',
         'otf'  => 'font/otf',
+        'wasm' => 'application/wasm',
+        'data' => 'application/octet-stream',
     );
 
     /** Base path to the games directory. */

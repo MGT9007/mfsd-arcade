@@ -1,0 +1,6 @@
+# WipEout game binaries — large files, not committed to repo.
+# Download from https://phoboslab.org/wipegame/ and place here.
+wipeout.js
+wipeout.wasm
+wipeout.data
+wipeout-minimal.js
