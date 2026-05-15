@@ -92,11 +92,9 @@
         /* If leaderboard is already showing from a game-over, let it complete normally */
         if (leaderboardActive) return;
 
-        var score = (typeof Game !== 'undefined') ? (Game.score || 0) : 0;
-        var gameActive = (typeof Game !== 'undefined' && Game.FSM &&
-            Game.FSM.state !== 'waiting' && Game.FSM.state !== 'boot');
+        var score = (typeof Game !== 'undefined' && Game.score) ? Game.score : 0;
 
-        if (gameActive && score > 0 && typeof MFSDLeaderboard !== 'undefined' && MFSDLeaderboard.isConnected()) {
+        if (score > 0 && typeof MFSDLeaderboard !== 'undefined' && MFSDLeaderboard.isConnected()) {
             leaderboardActive = true;
             MFSDLeaderboard.onGameOver(score);
         } else {

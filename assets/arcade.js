@@ -324,10 +324,7 @@
         if (el.iframe && el.iframe.src && el.iframe.src !== 'about:blank') {
             state.awaitingScoreSubmit = true;
             try {
-                el.iframe.contentWindow.postMessage(
-                    { type: 'mfsd-time-expired' },
-                    window.location.origin
-                );
+                el.iframe.contentWindow.postMessage({ type: 'mfsd-time-expired' }, '*');
             } catch (e) {}
 
             /* Fallback: tear down after 45s if the game never responds */
