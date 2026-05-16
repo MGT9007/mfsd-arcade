@@ -36,15 +36,14 @@
     </style>
 
     <script>
-    /* ── Binary assets served directly from plugin (bypasses PHP for speed) ── */
-    var MFSD_GAMES_URL   = '{{PLUGIN_GAMES_URL}}';
+    /* ── Binary assets served from uploads dir (survives deployments, no PHP) ── */
+    var MFSD_UPLOADS_URL = '{{WP_UPLOADS_URL}}mfsd-arcade-games/wipeout/';
     var MFSD_ASSET_BASE  = '{{ASSET_BASE}}';
     var MFSD_TOKEN_PARAM = '{{TOKEN_PARAM}}';
 
     function mfsdFileUrl(filename) {
-        /* Strip path prefix, serve wasm/data directly via web server (no PHP) */
         var bare = filename.split('/').pop();
-        return MFSD_GAMES_URL + bare;
+        return MFSD_UPLOADS_URL + bare;
     }
 
     var statusEl   = null;
@@ -146,8 +145,8 @@
     Module.setStatus('Downloading game…');
     </script>
 
-    <!-- Game engine served directly (no PHP overhead) -->
-    <script src="{{PLUGIN_GAMES_URL}}wipeout-minimal.js"></script>
+    <!-- Game engine from uploads dir (survives deployer, served directly by Apache) -->
+    <script src="{{WP_UPLOADS_URL}}mfsd-arcade-games/wipeout/wipeout-minimal.js"></script>
 
     <!-- MFSD leaderboard + WipEout score hook (also direct) -->
     <script src="{{PLUGIN_GAMES_URL}}mfsd-leaderboard.js"></script>

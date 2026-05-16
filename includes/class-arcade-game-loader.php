@@ -322,12 +322,16 @@ class MFSD_Arcade_Game_Loader {
             /* Direct public URL for the game directory — bypasses PHP for static assets */
             $plugin_games_url = plugin_dir_url(dirname(__FILE__)) . 'games/' . $slug . '/';
 
+            $uploads     = wp_upload_dir();
+            $uploads_url = trailingslashit($uploads['baseurl']);
+
             $html = file_get_contents($template_path);
             $html = str_replace('{{ASSET_BASE}}',      $asset_base,       $html);
             $html = str_replace('{{TOKEN}}',            esc_attr($token),  $html);
             $html = str_replace('{{TOKEN_PARAM}}',      $token_param,      $html);
             $html = str_replace('{{SLUG}}',             esc_attr($slug),   $html);
             $html = str_replace('{{PLUGIN_GAMES_URL}}', $plugin_games_url, $html);
+            $html = str_replace('{{WP_UPLOADS_URL}}',   $uploads_url,      $html);
             return $html;
         }
 
