@@ -37,14 +37,11 @@
 
     <script>
     var MFSD_PLUGIN_URL  = '{{PLUGIN_GAMES_URL}}';
-    var MFSD_UPLOADS_URL = '{{WP_UPLOADS_URL}}mfsd-arcade-games/wipeout/';
     var MFSD_ASSET_BASE  = '{{ASSET_BASE}}';
     var MFSD_TOKEN_PARAM = '{{TOKEN_PARAM}}';
 
     function mfsdFileUrl(filename) {
         var bare = filename.split('/').pop();
-        /* wipeout.data is 145MB — too large for git, served from uploads */
-        if (bare === 'wipeout.data') return MFSD_UPLOADS_URL + bare;
         return MFSD_PLUGIN_URL + bare;
     }
 
