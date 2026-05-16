@@ -1,8 +1,3 @@
-# WipEout game binaries — large files, not committed to repo.
-# Download from https://phoboslab.org/wipegame/ and place here.
-wipeout.js
-wipeout.wasm
+# wipeout.data is 145MB — exceeds GitHub's 100MB limit, must be uploaded to server manually.
+# Place at: /wp-content/uploads/mfsd-arcade-games/wipeout/wipeout.data
 wipeout.data
-wipeout-minimal.js
-wipeout-minimal.js
-wipeout-minimal.data
