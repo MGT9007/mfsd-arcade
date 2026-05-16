@@ -1,11 +1,13 @@
-# Block all direct access to game files.
-# These are served exclusively through the mfsd-arcade game loader endpoint.
+# Binary game assets (js, wasm, data, css, images, audio) are served directly
+# by the web server for performance. PHP/HTML/JSON remain protected.
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    RewriteRule \.(js|css|wasm|data|png|jpg|jpeg|gif|svg|wav|mp3|ogg|woff|woff2|ttf)$ - [L]
     RewriteRule .* - [F,L]
 </IfModule>
 
-# Fallback for servers without mod_rewrite
 <IfModule !mod_rewrite.c>
-    Deny from all
+    <FilesMatch "\.(php|html|htm|json)$">
+        Deny from all
+    </FilesMatch>
 </IfModule>

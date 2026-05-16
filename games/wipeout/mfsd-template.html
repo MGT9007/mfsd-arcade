@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="viewport-fit=cover, user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
     <title>WipEout — MFSD Arcade</title>
-    <link rel="stylesheet" href="{{ASSET_BASE}}?file=mfsd-leaderboard.css&token={{TOKEN_PARAM}}">
+    <link rel="stylesheet" href="{{PLUGIN_GAMES_URL}}mfsd-leaderboard.css">
     <style>
         html, body {
             margin: 0; padding: 0; overflow: hidden;
@@ -36,14 +36,15 @@
     </style>
 
     <script>
-    /* ── MFSD asset routing — ALL Emscripten file requests go through the gated endpoint ── */
+    /* ── Binary assets served directly from plugin (bypasses PHP for speed) ── */
+    var MFSD_GAMES_URL   = '{{PLUGIN_GAMES_URL}}';
     var MFSD_ASSET_BASE  = '{{ASSET_BASE}}';
     var MFSD_TOKEN_PARAM = '{{TOKEN_PARAM}}';
 
     function mfsdFileUrl(filename) {
-        /* Strip any path prefix (Emscripten may pass 'build/wasm/wipeout.data') */
+        /* Strip path prefix, serve wasm/data directly via web server (no PHP) */
         var bare = filename.split('/').pop();
-        return MFSD_ASSET_BASE + '?file=' + encodeURIComponent(bare) + '&token=' + MFSD_TOKEN_PARAM;
+        return MFSD_GAMES_URL + bare;
     }
 
     var statusEl   = null;
@@ -145,11 +146,11 @@
     Module.setStatus('Downloading game…');
     </script>
 
-    <!-- Game engine — minimal build (no music/intro, ~2MB vs 145MB) -->
-    <script src="{{ASSET_BASE}}?file=wipeout-minimal.js&token={{TOKEN_PARAM}}"></script>
+    <!-- Game engine served directly (no PHP overhead) -->
+    <script src="{{PLUGIN_GAMES_URL}}wipeout-minimal.js"></script>
 
-    <!-- MFSD leaderboard + WipEout score hook -->
-    <script src="{{ASSET_BASE}}?file=mfsd-leaderboard.js&token={{TOKEN_PARAM}}"></script>
-    <script src="{{ASSET_BASE}}?file=mfsd-wipeout-hook.js&token={{TOKEN_PARAM}}"></script>
+    <!-- MFSD leaderboard + WipEout score hook (also direct) -->
+    <script src="{{PLUGIN_GAMES_URL}}mfsd-leaderboard.js"></script>
+    <script src="{{PLUGIN_GAMES_URL}}mfsd-wipeout-hook.js"></script>
 </body>
 </html>

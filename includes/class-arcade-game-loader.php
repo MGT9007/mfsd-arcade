@@ -319,11 +319,15 @@ class MFSD_Arcade_Game_Loader {
         /* If there's a custom template in the game dir, use it */
         $template_path = $game_dir . 'mfsd-template.html';
         if (file_exists($template_path)) {
+            /* Direct public URL for the game directory — bypasses PHP for static assets */
+            $plugin_games_url = plugin_dir_url(dirname(__FILE__)) . 'games/' . $slug . '/';
+
             $html = file_get_contents($template_path);
-            $html = str_replace('{{ASSET_BASE}}', $asset_base, $html);
-            $html = str_replace('{{TOKEN}}', esc_attr($token), $html);
-            $html = str_replace('{{TOKEN_PARAM}}', $token_param, $html);
-            $html = str_replace('{{SLUG}}', esc_attr($slug), $html);
+            $html = str_replace('{{ASSET_BASE}}',      $asset_base,       $html);
+            $html = str_replace('{{TOKEN}}',            esc_attr($token),  $html);
+            $html = str_replace('{{TOKEN_PARAM}}',      $token_param,      $html);
+            $html = str_replace('{{SLUG}}',             esc_attr($slug),   $html);
+            $html = str_replace('{{PLUGIN_GAMES_URL}}', $plugin_games_url, $html);
             return $html;
         }
 
