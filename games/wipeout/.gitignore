@@ -1,3 +1,4 @@
-# wipeout.data is 145MB — exceeds GitHub's 100MB limit.
-# Deploy manually via FTP to: /wp-content/plugins/mfsd-arcade/games/wipeout/wipeout.data
+# wipeout.data is 145MB — exceeds GitHub's 100MB limit AND would be deleted
+# by the git deployer on every deploy. Upload once via FTP/SCP to:
+# /wp-content/uploads/mfsd-arcade-games/wipeout/wipeout.data
 wipeout.data
