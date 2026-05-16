@@ -145,8 +145,8 @@
     Module.setStatus('Downloading game…');
     </script>
 
-    <!-- Game engine — loaded through session-gated endpoint -->
-    <script src="{{ASSET_BASE}}?file=wipeout.js&token={{TOKEN_PARAM}}"></script>
+    <!-- Game engine — minimal build (no music/intro, ~2MB vs 145MB) -->
+    <script src="{{ASSET_BASE}}?file=wipeout-minimal.js&token={{TOKEN_PARAM}}"></script>
 
     <!-- MFSD leaderboard + WipEout score hook -->
     <script src="{{ASSET_BASE}}?file=mfsd-leaderboard.js&token={{TOKEN_PARAM}}"></script>
