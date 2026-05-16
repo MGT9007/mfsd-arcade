@@ -103,7 +103,7 @@
         },
 
         preRun: [],
-        postRun: [],
+        postRun: [function () { Module.canvas.focus(); }],
     };
 
     window.onerror = function (msg, src, line, col, err) {
@@ -145,6 +145,11 @@
     loadingEl      = document.getElementById('mfsd-loading');
     checkWebGL();
     Module.setStatus('Downloading game…');
+
+    /* Focus canvas so keyboard input reaches the game (needed inside iframe).
+       Click anywhere also re-focuses in case the user tabs away. */
+    Module.canvas.focus();
+    document.addEventListener('click', function () { Module.canvas.focus(); });
     </script>
 
     <!-- Game engine from plugin dir (deployed via GitHub) -->
