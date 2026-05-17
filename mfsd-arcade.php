@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MFSD Arcade
  * Description: Coin-operated game arcade for MFSD students. Spend quest coins for timed play sessions on browser-based games.
- * Version: 3.1.3
+ * Version: 3.1.4
  * Author: MisterT9007
  * Requires Plugins: mfsd-quest-log
  */
@@ -16,7 +16,7 @@ foreach (array('db', 'session', 'api', 'game-loader') as $f) {
 
 final class MFSD_Arcade {
 
-    const VERSION      = '3.1.3';
+    const VERSION      = '3.1.4';
     const OPTION_MPC   = 'mfsd_arcade_minutes_per_coin';   /* global: 1 coin = X minutes */
 
     public static function instance() {
@@ -27,6 +27,7 @@ final class MFSD_Arcade {
     private function __construct() {
         register_activation_hook(__FILE__, array($this, 'install'));
         add_action('init',                   array($this, 'register_assets'));
+        add_action('init',                   array('MFSD_Arcade', 'ensure_upload_dirs'));
         add_shortcode('mfsd_arcade',         array($this, 'shortcode_lobby'));
         add_shortcode('mfsd_arcade_play',    array($this, 'shortcode_play'));
         add_action('rest_api_init',          array($this, 'register_routes'));
@@ -40,6 +41,18 @@ final class MFSD_Arcade {
     public function install() {
         MFSD_Arcade_DB::create_tables();
         add_option(self::OPTION_MPC, 3);   /* default: 1 coin = 3 minutes */
+        self::ensure_upload_dirs();
+    }
+
+    /** Create uploads subdirs for each game so large assets can be stored there safely. */
+    public static function ensure_upload_dirs() {
+        $base = wp_upload_dir()['basedir'];
+        foreach ( array( 'wipeout', 'asteroids', 'mario', 'hgc' ) as $game ) {
+            $dir = $base . '/mfsd-arcade-games/' . $game;
+            if ( ! is_dir( $dir ) ) {
+                wp_mkdir_p( $dir );
+            }
+        }
     }
 
     /** Global getter — 1 coin = X minutes of arcade time. */
