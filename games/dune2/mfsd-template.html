@@ -17,6 +17,12 @@
             object-fit: contain;
             image-rendering: pixelated;
         }
+        #canvas {
+            /* OpenDUNE native resolution */
+            width: 640px; height: 400px;
+            max-width: 100%; max-height: 100vh;
+            margin: auto;
+        }
 
         /* Loading overlay */
         #mfsd-loading {
@@ -182,7 +188,7 @@
     </script>
 </head>
 <body>
-    <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+    <canvas id="canvas" width="640" height="400" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
 
     <!-- Loading overlay — shown while game engine loads after house is chosen -->
     <div id="mfsd-loading" class="hidden">
