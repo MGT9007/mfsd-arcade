@@ -126,6 +126,9 @@
         canvas: null,
         arguments: ['-a'],   /* overridden by house selection before load */
 
+        /* Old Emscripten data-file loading uses filePackagePrefixURL, not locateFile */
+        filePackagePrefixURL: null,   /* set to MFSD_PLUGIN_URL just before engine loads */
+
         locateFile: function (path, prefix) {
             return MFSD_PLUGIN_URL + path;
         },
@@ -228,6 +231,9 @@
             houseSelect.classList.add('hidden');
             loadingEl.classList.remove('hidden');
             Module.setStatus('Downloading game…');
+
+            /* Point old-style Emscripten data loader at the plugin dir */
+            Module['filePackagePrefixURL'] = MFSD_PLUGIN_URL;
 
             /* Dynamically load engine now that arguments are set */
             var s = document.createElement('script');
