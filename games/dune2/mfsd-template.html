@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="viewport-fit=cover, user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Dune II — MFSD Arcade</title>
+    <link rel="stylesheet" href="{{PLUGIN_GAMES_URL}}mfsd-leaderboard.css">
+    <style>
+        html, body {
+            margin: 0; padding: 0; overflow: hidden;
+            background: #000; color: #ccc;
+            font-family: monospace; font-size: 13px;
+        }
+        canvas {
+            display: block;
+            width: 100%; height: 100vh;
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+
+        /* Loading overlay */
+        #mfsd-loading {
+            position: fixed; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: #1a0a00; z-index: 50;
+        }
+        #mfsd-loading.hidden { display: none; }
+        #mfsd-spinner {
+            width: 48px; height: 48px; border-radius: 50%;
+            border: 4px solid #333;
+            border-top-color: #c8a850;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #mfsd-status { color: #aaa; margin-bottom: 8px; }
+        #mfsd-progress { width: 200px; accent-color: #c8a850; }
+
+        /* House selection screen */
+        #mfsd-house-select {
+            position: fixed; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: #1a0a00; z-index: 60;
+        }
+        #mfsd-house-select.hidden { display: none; }
+        #mfsd-house-select h2 {
+            color: #c8a850; font-size: 20px; margin-bottom: 8px;
+            text-transform: uppercase; letter-spacing: 2px;
+        }
+        #mfsd-house-select p {
+            color: #888; margin-bottom: 32px; font-size: 12px;
+        }
+        .mfsd-house-btn {
+            display: block; width: 240px; padding: 14px 0;
+            margin: 8px 0; text-align: center;
+            font-family: monospace; font-size: 15px;
+            font-weight: bold; letter-spacing: 1px;
+            border: 2px solid; border-radius: 3px;
+            cursor: pointer; text-transform: uppercase;
+            transition: background 0.15s;
+        }
+        .mfsd-house-btn[data-house="a"] { color: #4fa8e8; border-color: #4fa8e8; background: transparent; }
+        .mfsd-house-btn[data-house="a"]:hover { background: rgba(79,168,232,0.15); }
+        .mfsd-house-btn[data-house="o"] { color: #50c878; border-color: #50c878; background: transparent; }
+        .mfsd-house-btn[data-house="o"]:hover { background: rgba(80,200,120,0.15); }
+        .mfsd-house-btn[data-house="h"] { color: #e84040; border-color: #e84040; background: transparent; }
+        .mfsd-house-btn[data-house="h"]:hover { background: rgba(232,64,64,0.15); }
+        .mfsd-house-desc { color: #666; font-size: 11px; margin-top: 4px; }
+    </style>
+
+    <script>
+    var MFSD_PLUGIN_URL = '{{PLUGIN_GAMES_URL}}';
+    var MFSD_ASSET_BASE = '{{ASSET_BASE}}';
+    var MFSD_TOKEN_PARAM = '{{TOKEN_PARAM}}';
+
+    /* Current audio element for music playback */
+    var _mfsdAudio = null;
+    var _mfsdMuted = false;
+
+    /* Called by Emscripten module when it wants to play a track.
+       Original sets src to "/" + filename — we redirect to plugin dir. */
+    window.playMusic = function (filePtr) {
+        try {
+            var name = Module['UTF8ToString']
+                ? Module['UTF8ToString'](filePtr)
+                : Module['Pointer_stringify'](filePtr);
+            /* Extract bare filename, e.g. "music/8.mp3" → "8.mp3" */
+            var bare = name.split('/').pop();
+            if (!bare) return;
+            if (_mfsdAudio) { _mfsdAudio.pause(); _mfsdAudio = null; }
+            _mfsdAudio = new Audio(MFSD_PLUGIN_URL + 'music/' + bare);
+            _mfsdAudio.loop   = true;
+            _mfsdAudio.volume = 0.5;
+            if (!_mfsdMuted) _mfsdAudio.play().catch(function() {});
+        } catch (e) { console.warn('[Dune2] playMusic error', e); }
+    };
+
+    window.stopMusic = function () {
+        if (_mfsdAudio) { _mfsdAudio.pause(); _mfsdAudio = null; }
+    };
+
+    window.volumeMusic = function (volume) {
+        if (_mfsdAudio) _mfsdAudio.volume = Math.max(0, Math.min(1, volume / 128.0));
+    };
+
+    /* Module must be defined before opendune.js loads */
+    var Module = {
+        canvas: null,
+        arguments: ['-a'],   /* overridden by house selection before load */
+
+        locateFile: function (path, prefix) {
+            return MFSD_PLUGIN_URL + path;
+        },
+
+        print: function (text) {
+            console.log('[Dune2]', text);
+            if (window._mfsdDune2Print) window._mfsdDune2Print(text);
+        },
+
+        printErr: function (text) {
+            console.warn('[Dune2]', text);
+        },
+
+        setStatus: function (text) {
+            var statusEl   = document.getElementById('mfsd-status');
+            var progressEl = document.getElementById('mfsd-progress');
+            var loadingEl  = document.getElementById('mfsd-loading');
+            if (!statusEl) return;
+            if (!text) {
+                if (loadingEl) loadingEl.classList.add('hidden');
+                return;
+            }
+            var m = text.match(/([^(]+)\((\d+(?:\.\d+)?)\/(\d+)\)/);
+            if (m) {
+                statusEl.textContent = m[1].trim();
+                if (progressEl) {
+                    progressEl.hidden = false;
+                    progressEl.value  = parseFloat(m[2]);
+                    progressEl.max    = parseFloat(m[3]);
+                }
+            } else {
+                statusEl.textContent = text;
+                if (progressEl) progressEl.hidden = true;
+            }
+        },
+
+        totalDependencies: 0,
+        monitorRunDependencies: function (left) {
+            this.totalDependencies = Math.max(this.totalDependencies, left);
+            Module.setStatus(left
+                ? 'Preparing… (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')'
+                : '');
+        },
+
+        preRun:  [],
+        postRun: [function () {
+            var canvas = document.getElementById('canvas');
+            if (canvas) canvas.focus();
+        }],
+    };
+
+    window.onerror = function (msg, src, line, col, err) {
+        var text = 'Error: ' + (msg || err || 'unknown');
+        console.error('[Dune2 template]', text, src, line);
+        var statusEl  = document.getElementById('mfsd-status');
+        var loadingEl = document.getElementById('mfsd-loading');
+        if (statusEl)  { statusEl.textContent = text; statusEl.style.color = '#f66'; }
+        if (loadingEl) loadingEl.classList.remove('hidden');
+    };
+    </script>
+</head>
+<body>
+    <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+
+    <!-- Loading overlay — shown while game engine loads after house is chosen -->
+    <div id="mfsd-loading" class="hidden">
+        <div id="mfsd-spinner"></div>
+        <div id="mfsd-status">Loading Dune II…</div>
+        <progress id="mfsd-progress" value="0" max="100" hidden></progress>
+    </div>
+
+    <!-- House selection — shown first, dismissed before engine loads -->
+    <div id="mfsd-house-select">
+        <h2>Choose your house</h2>
+        <p>Your choice determines your units and campaign</p>
+        <button class="mfsd-house-btn" data-house="a">Atreides</button>
+        <div class="mfsd-house-desc">Balanced forces. Honour and courage.</div>
+        <button class="mfsd-house-btn" data-house="o" style="margin-top:16px">Ordos</button>
+        <div class="mfsd-house-desc">Subterfuge and speed. Deviators and saboteurs.</div>
+        <button class="mfsd-house-btn" data-house="h" style="margin-top:16px">Harkonnen</button>
+        <div class="mfsd-house-desc">Brute force and aggression. Devastators and troopers.</div>
+    </div>
+
+    <script>
+    Module.canvas = document.getElementById('canvas');
+    document.addEventListener('click', function () { Module.canvas.focus(); });
+
+    /* House selection — set Module.arguments then dynamically load the engine */
+    (function () {
+        var houseSelect = document.getElementById('mfsd-house-select');
+        var loadingEl   = document.getElementById('mfsd-loading');
+
+        houseSelect.addEventListener('click', function (e) {
+            var btn = e.target.closest('.mfsd-house-btn');
+            if (!btn) return;
+
+            var house = btn.getAttribute('data-house');
+            Module['arguments'] = ['-' + house];
+
+            houseSelect.classList.add('hidden');
+            loadingEl.classList.remove('hidden');
+            Module.setStatus('Downloading game…');
+
+            /* Dynamically load engine now that arguments are set */
+            var s = document.createElement('script');
+            s.src = MFSD_PLUGIN_URL + 'opendune.js';
+            document.body.appendChild(s);
+        });
+    }());
+    </script>
+
+    <!-- MFSD leaderboard + Dune II score hook -->
+    <script src="{{PLUGIN_GAMES_URL}}mfsd-leaderboard.js"></script>
+    <script src="{{PLUGIN_GAMES_URL}}mfsd-dune2-hook.js"></script>
+</body>
+</html>

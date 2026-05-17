@@ -1,0 +1,13 @@
+{
+  "slug": "dune2",
+  "title": "Dune II",
+  "description": "Command your house and conquer Arrakis. Build bases, harvest spice, and crush your enemies in this classic RTS.",
+  "controls": [
+    { "key": "Mouse", "action": "Select / Move / Attack" },
+    { "key": "Left click", "action": "Select unit or building" },
+    { "key": "Right click", "action": "Move or attack" },
+    { "key": "F1–F4", "action": "Select unit type" },
+    { "key": "Esc", "action": "Deselect / Menu" }
+  ],
+  "score_label": "Missions completed"
+}
