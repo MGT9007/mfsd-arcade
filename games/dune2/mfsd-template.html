@@ -79,30 +79,40 @@
     var _mfsdAudio = null;
     var _mfsdMuted = false;
 
-    /* Called by Emscripten module when it wants to play a track.
-       Original sets src to "/" + filename — we redirect to plugin dir. */
-    window.playMusic = function (filePtr) {
-        try {
-            var name = Module['UTF8ToString']
-                ? Module['UTF8ToString'](filePtr)
-                : Module['Pointer_stringify'](filePtr);
-            /* Extract bare filename, e.g. "music/8.mp3" → "8.mp3" */
-            var bare = name.split('/').pop();
-            if (!bare) return;
-            if (_mfsdAudio) { _mfsdAudio.pause(); _mfsdAudio = null; }
-            _mfsdAudio = new Audio(MFSD_PLUGIN_URL + 'music/' + bare);
-            _mfsdAudio.loop   = true;
-            _mfsdAudio.volume = 0.5;
-            if (!_mfsdMuted) _mfsdAudio.play().catch(function() {});
-        } catch (e) { console.warn('[Dune2] playMusic error', e); }
-    };
+    function _mfsdPtrToStr(ptr) {
+        if (!ptr) return '';
+        return Module['UTF8ToString'] ? Module['UTF8ToString'](ptr) : Module['Pointer_stringify'](ptr);
+    }
 
-    window.stopMusic = function () {
-        if (_mfsdAudio) { _mfsdAudio.pause(); _mfsdAudio = null; }
-    };
-
-    window.volumeMusic = function (volume) {
-        if (_mfsdAudio) _mfsdAudio.volume = Math.max(0, Math.min(1, volume / 128.0));
+    /* Epicport.API — opendune.js reads these callbacks at startup before calling them.
+       Must be defined before opendune.js is dynamically loaded. */
+    window.Epicport = {
+        API: {
+            playMusic: function (filePtr) {
+                try {
+                    var name = _mfsdPtrToStr(filePtr);
+                    var bare = name.split('/').pop();
+                    if (!bare) return;
+                    if (_mfsdAudio) { _mfsdAudio.pause(); _mfsdAudio = null; }
+                    _mfsdAudio = new Audio(MFSD_PLUGIN_URL + 'music/' + bare);
+                    _mfsdAudio.loop   = true;
+                    _mfsdAudio.volume = 0.5;
+                    if (!_mfsdMuted) _mfsdAudio.play().catch(function () {});
+                } catch (e) { console.warn('[Dune2] playMusic error', e); }
+            },
+            haltMusic: function () {
+                if (_mfsdAudio) { _mfsdAudio.pause(); _mfsdAudio = null; }
+            },
+            volumeMusic: function (volume) {
+                if (_mfsdAudio) _mfsdAudio.volume = Math.max(0, Math.min(1, volume / 128.0));
+            },
+            /* No cloud saves — stubs keep the engine happy */
+            canLoad:              function () { return false; },
+            canSave:              function () { return false; },
+            pushSave:             function () {},
+            selectLoadFileDialog: function () {},
+            selectSaveFileDialog: function () {},
+        }
     };
 
     /* Module must be defined before opendune.js loads */
