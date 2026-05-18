@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="viewport-fit=cover, user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Pac-Man — MFSD Arcade</title>
+    <link rel="stylesheet" href="{{PLUGIN_GAMES_URL}}mfsd-leaderboard.css">
+    <style>
+        @font-face {
+            font-family: 'ArcadeR';
+            src: url('{{PLUGIN_GAMES_URL}}font/ARCADE_R.TTF') format('truetype');
+        }
+        @font-face {
+            font-family: 'PressStart2P';
+            src: url('{{PLUGIN_GAMES_URL}}font/PressStart2P.ttf') format('truetype');
+        }
+        html, body {
+            margin: 0; padding: 0;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        canvas { display: block; }
+        #atlas { display: none; }
+    </style>
+
+    <script>
+    var MFSD_PLUGIN_URL = '{{PLUGIN_GAMES_URL}}';
+
+    /* ── Patch Audio and Image to fix relative asset paths ──────────────
+       pacman.js loads sounds as new Audio('sounds/foo.mp3') and sprites
+       via Image src. When served from the REST API iframe URL, relative
+       paths resolve to the wrong location — we prepend MFSD_PLUGIN_URL. */
+
+    (function () {
+        var _NativeAudio = window.Audio;
+        window.Audio = function (src) {
+            var resolved = src ? _mfsdResolvePath(src) : src;
+            return new _NativeAudio(resolved);
+        };
+        window.Audio.prototype = _NativeAudio.prototype;
+
+        var _NativeImage = window.Image;
+        window.Image = function (w, h) {
+            var img = new _NativeImage(w, h);
+            var _src = '';
+            Object.defineProperty(img, 'src', {
+                get: function () { return _src; },
+                set: function (v) { _src = v; img.setAttribute('src', _mfsdResolvePath(v)); },
+                configurable: true
+            });
+            return img;
+        };
+        window.Image.prototype = _NativeImage.prototype;
+
+        function _mfsdResolvePath(src) {
+            if (!src) return src;
+            /* Leave absolute URLs, data URIs, blob URIs untouched */
+            if (src.indexOf('://') !== -1 || src.indexOf('//') === 0 ||
+                src.indexOf('data:') === 0 || src.indexOf('blob:') === 0) {
+                return src;
+            }
+            /* Strip leading slash to avoid double slashes */
+            return MFSD_PLUGIN_URL + src.replace(/^\//, '');
+        }
+    }());
+    </script>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <canvas id="atlas" style="display:none"></canvas>
+
+    <script src="{{PLUGIN_GAMES_URL}}pacman.js"></script>
+    <script src="{{PLUGIN_GAMES_URL}}mfsd-leaderboard.js"></script>
+    <script src="{{PLUGIN_GAMES_URL}}mfsd-pacman-hook.js"></script>
+</body>
+</html>

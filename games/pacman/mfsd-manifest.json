@@ -1,0 +1,11 @@
+{
+  "slug": "pacman",
+  "title": "Pac-Man",
+  "description": "Eat all the dots, avoid the ghosts. Classic 1980 arcade action with Pac-Man, Ms. Pac-Man, and more.",
+  "controls": [
+    { "key": "Arrow keys", "action": "Move Pac-Man" },
+    { "key": "Enter", "action": "Select / Start" },
+    { "key": "Esc", "action": "Pause / Menu" }
+  ],
+  "score_label": "Points"
+}
